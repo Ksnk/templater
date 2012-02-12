@@ -11,7 +11,7 @@
 
 if(!defined('TEMPLATE_PATH')) define('TEMPLATE_PATH',dirname(__FILE__).DIRECTORY_SEPARATOR.'templates');
 
-class tpl_parser extends parser {
+class tpl_parser extends nat_parser {
 	protected 
         
           $opensentence=array() // комплект открытых тегов, для портирования 
@@ -19,7 +19,12 @@ class tpl_parser extends parser {
         
      	, $locals=array() // стек идентификаторов с областью видимости
     	, $ids_low=0   // нижняя граница области видимости
-    	; 
+    	;
+    /** @var string - скрипт для выполнения */
+    public $script
+    /** @var boolean - сохранять-несохранять */
+        , $storeparams
+        ;
         
 	function __construct(){
 		parent::__construct(array(
@@ -79,11 +84,13 @@ class tpl_parser extends parser {
 		}
 		return $op1;
 	}
-	
-	/**
-	 * отработка тега block, блок верхнего уровня является "корневым" элементом
-	 */
-	function block_internal( $tag_waitingfor=null,&$tag=null ){
+
+    /**
+     * отработка тега block, блок верхнего уровня является "корневым" элементом
+     * @param array|null $tag_waitingfor
+     * @param null $tag
+     */
+	function block_internal( $tag_waitingfor=array(),&$tag=null ){
 		if(empty($tag))
 			$tag=array('tag'=>'block','operand'=>count($this->operand));
 		$data=array();	
@@ -202,7 +209,8 @@ class tpl_parser extends parser {
 	/**
 	 * функция проверяем комплект локальных переменных 
 	 * @param $id
-	 */
+     * @return bool
+     */
 	function checkId($id){
 		for($i=$this->ids_low;$i<count($this->locals);$i++){
 			if($this->locals[$i]==$id)
@@ -391,10 +399,11 @@ class tpl_parser extends parser {
 		return $op1;
 	}
 
-	/**
-	 * разрешить неизвестный ID. 
-	 * @param $id
-	 */ 
+    /**
+     * разрешить неизвестный ID.
+     * @param operand $op
+     * @return mixed|\operand
+     */
     function &resolve_id(&$op){
     	return $this->pushOp($op);
     } 
@@ -459,7 +468,7 @@ class tpl_parser extends parser {
 			$this->newId($v['name']);
 		}
     	$this->block_internal(array('endmacro'),$tag);
-    	$op=$this->popOp();
+    	/*$op=*/$this->popOp();
     	$tag['body']=$this->template('block',$tag);
     	array_splice($this->locals, $id_count);
     	$this->getNext();
@@ -486,11 +495,11 @@ class tpl_parser extends parser {
     	if ($this->op->type!='TYPE_COMMA') 
     		$this->getNext();
 	}
-	
-/**
- * отрабoтка тега for
- * @param $id
- */ 
+
+    /**
+     * отрабoтка тега for
+     * @internal param $id
+     */
     function tag_for(){
     	// парсинг тега for
     	// полная форма:
@@ -565,11 +574,11 @@ class tpl_parser extends parser {
     		$sent['extends']=preg_replace('~\..*$~','',basename($op->val));
     	}
 		$this->getNext(); // съели символ, закрывающий тег 
-    } 
-     
+    }
+
     /**
      * отрабoтка тега if
-     * @param $id
+     * @return
      */
     function tag_if(){
     	// парсинг тега for
@@ -615,7 +624,7 @@ class tpl_parser extends parser {
     }
 
     function tag_import(){
-    	$set =array('tag'=>'import','operand'=>count($this->operand));
+    	//$set =array('tag'=>'import','operand'=>count($this->operand));
     	$this->getExpression(); // получили имя файла для импорта
     	$op=$this->popOp();
     	$t=&$this->opensent('class');
@@ -647,13 +656,15 @@ class tpl_parser extends parser {
     	$this->pushOp($this->oper($this->template('set',$set),'TYPE_SENTENSE'));
     	return;
     }
-    
-       
-/**
- * функция компиляции одного подшаблона. 
- * + сборка на стеке операндов готовой конструкции
- * + лексический анализ 
- */ 
+
+
+    /**
+     * функция компиляции одного подшаблона.
+     * + сборка на стеке операндов готовой конструкции
+     * + лексический анализ
+     * @param string $class
+     * @return mixed|string
+     */
 	function tplcalc($class='compiler'){
 		$tag=array('tag'=>'class','import'=>array(),'macro'=>array(),'name'=>$class,'data'=>array());
 		$this->opensentence[]= &$tag;
@@ -671,7 +682,8 @@ class tpl_parser extends parser {
  * @param string $idx - имя подшаблона "" - корневой подшаблон
  * @param array $par - данные для рендеринга
  * @param string $tpl_class - имя базового шаблона
- */	
+ * @return mixed|string
+ */
 	function template($idx=null,$par=null,$tpl_class='compiler'){
 		static $tpl_compiler;
 		if(!is_null($tpl_class) || empty($tpl_compiler)) {

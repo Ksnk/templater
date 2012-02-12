@@ -50,17 +50,17 @@ class templateTest  extends PHPUnit_Framework_TestCase {
 	function _test_tpl($tpl,$data){
 		$calc=new php_compiler();
 		$calc->makelex($tpl);
-		try {
+//		try {
             $result=$calc->block_internal();
 			$x='$result="";'.$calc->popOp()->val.' return $result;'; 
 			//if (isset($_GET['debug']))
 			//	error_log($x,3,'log.log');
 			$fnc=create_function('&$par',$x);
 			return $fnc($data);
-		} catch(Exception $e){
+/*		} catch(Exception $e){
 			print_r($e->getMessage());echo'</pre>';
 			return 'XXX';
-		}
+		}*/
 	}
 	
 	/**
