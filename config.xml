@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<var name="ID">Templater engine (C) by Ksnk (sergekoriakin@gmail.com)
+	based on Jinja2 sintax
+	</var>
+	<var name="VERSION">1.0</var>
+
+	<var name="SVN_Revision">$WCREV$</var>
+	<var name="SVN_Modified">$WCMODS?Modified:Not modified$</var>
+	<var name="SVN_Date">$WCDATE$</var>
+	<!-- ************************************** -->
+	<!-- **** plugin files                 **** -->
+	<!-- ************************************** -->
+	<files>
+	</files>
+	<!-- ************************************** -->
+	<!-- **** core files                   **** -->
+	<!-- ************************************** -->
+  <files dstdir="build">
+  <file>readme.txt</file>
+  </files>
+  <files dstdir="build/lib">
+	<file>template_parser.class.php</file>
+  <file>compiler.class.php</file>
+  <file>compiler.php.php</file>
+	<file dir="../nat2php">nat2php.class.php</file>
+	</files>
+
+	<files dstdir="build/render">
+	<file dir="templates">tpl_base.php</file>
+	<file dir="templates">tpl_compiler.php</file>
+  <file dir="templates">compiler.jtpl</file>
+	</files>
+  <files dstdir="build/samples">
+  <file dir="sample">index.php</file>
+  <file dir="sample">render.php</file>
+  </files> 
+  <files dstdir="build/samples/templates">
+  <file dir="sample/templates">*.jtpl</file>
+  <file dir="templates">tpl_base.php</file>
+  <file dir="templates">tpl_compiler.php</file>
+  </files>
+  -->
+</config>

@@ -1,0 +1,93 @@
+####################################################################
+## 
+##  файл шаблонов генерации JavaScript
+##  предполагаемый способ работы
+##  var tpl=new templater(); x.innerHTML=tpl('myTemplate',data); 
+##
+####################################################################
+
+####################################################################
+## class
+##
+{%- block class -%}
+function tpl_{{name}}(){
+
+{% for func in data %} 
+{{ func }}
+
+{% endfor %} 
+}
+tpl_{{name}}.prototype= tpl_{{extends |default('base') }} 
+{% endblock %}
+
+####################################################################
+##  представление тега SET
+##
+{%- block set %}var {{id}}={{res}}{%- endblock %}
+
+####################################################################
+## представление тега FOR 
+##
+{%- block for -%}
+{% if {{index}}%}
+foreach({{in}} in {{index}}){
+{{body}}
+}
+{%else%}{{else}}
+{%endif%}
+{%- endblock %}
+
+####################################################################
+## представление тега блок в функции 
+##
+{%- block callblock -%}
+	{% set x=name %}
+	{%- if x -%}
+	   this._{{x}}(par) 
+	{%- endif -%}
+{% endblock %}
+
+####################################################################
+## представление тега блок 
+##
+{%- block block -%}
+{% if name %}
+this._{{name}} = function (par){
+var $result='';
+{% endif %}		
+{% for blk in data%}
+{%if blk.string %}{%if blk.string!="''" %}
+$result+={{ blk.string }};
+{%endif %}{% else %}
+{{ blk.data}};    	
+{%endif %}
+{%- endfor %}
+{% if name %}
+return $result;
+}
+{% endif %}	
+{%- endblock -%}
+
+####################################################################
+## представление тега IF  
+##
+{%- block if -%}
+{%set loop_index=1 %}
+{%set loop_last=length(data) %}
+{% for  d in data %}
+{% if loop_index==1 -%}
+if( {{d.if}} ) {
+{{d.then}}
+}
+{%- elif d.if or (loop_index!=loop_last) %}
+ elseif( {{d.if}} ) {
+{{d.then}}
+}
+{%- else %}
+ else {
+{{d.then}}
+}
+{%- endif %}	
+{% set loop_index=loop_index+1 %}
+{% endfor %}
+{%- endblock -%}

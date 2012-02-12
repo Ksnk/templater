@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="templater" default="init">
+
+	<property description="Common Folder" name="common_dir" location="Z:/xilen/common"/>
+  <property name="last_ftp" value="06/25/2009 11:06 AM"/>
+  <property name="zip" value="Jinja4PHP"/>
+
+	<import file="${common_dir}/extend.xml"/>
+	
+	<target name="init">
+		<SVNcheck src="config.xml" dst="config.svn.xml"/>
+		<preprocess dst="build" config="config.svn.xml"/>
+		<delete file="config.svn.xml"/>
+	</target>
+	
+  <target name="pack_timestamp"  depends="init">
+      <!-- Create the time stamp -->
+    <delete file="./${zip}.zip"/>
+    <zip duplicate="preserve" destfile="./${zip}.zip">
+      <fileset dir="build">
+        <include name="**/*.*"/>
+        <date datetime="${last_ftp}" when="after"/>
+      </fileset>
+    </zip>
+  </target>
+
+</project>

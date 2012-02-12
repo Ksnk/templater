@@ -1,0 +1,153 @@
+####################################################################
+## 
+##  файл шаблонов для шаблонизатора 
+##
+####################################################################
+
+####################################################################
+## class
+##
+{%- block class -%}
+<?php
+/**
+ * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything, 
+ * for your changes can be lost at any time.  
+ */
+{% if extends %}
+include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{extends}}.php';
+{% else %}
+include_once 'tpl_base.php';
+{% endif %}
+{% for imp in import -%}
+require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
+{% endfor %}
+
+class tpl_{{name}} extends tpl_{{extends |default('base') }} {
+function __construct(){
+$this->macro=array();
+{% for m in macro %}
+$this->macro['{{m}}']=array($this,'_'.'{{m}}');
+{% endfor %}
+{% for imp in import -%}
+${{imp}}=new tpl_{{imp}}();
+$this->macro=array_merge($this->macro,${{imp}}->macro);
+{%-endfor%}
+}
+{% for func in data %} 
+{{ func }}
+
+{% endfor %} 
+}
+{% endblock %}
+
+####################################################################
+##  выполнение тега MACRO
+##
+{%- block callmacro -%}
+if(!empty($this->macro['{{name}}']))
+  $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p.key}}'=>{{p.value}},{%endfor%}){%if param%},{{param|join(', ')}}{% endif %})
+{%- endblock -%}
+
+####################################################################
+##  представление тега SET
+##
+{%- block set %}{{id}}={{res}}{%- endblock %}
+
+####################################################################
+## представление тега FOR 
+##
+{%- block for -%}
+$loop{{loopdepth}}_array=ps({{in}});
+{% if loop_index -%}
+	$loop{{loopdepth}}_index=0;
+{% endif%}
+{% if loop_last -%}
+	$loop{{loopdepth}}_last=count($loop{{loopdepth}}_array);
+{% endif%}
+{% if loop_revindex -%}
+	$loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
+{% endif%}
+{% if loop_cycle -%}
+	$loop{{loopdepth}}_cycle={{loop_cycle}};
+{% endif%}
+if (!empty($loop{{loopdepth}}_array)){
+foreach($loop{{loopdepth}}_array as {{index}}){
+{% if loop_index %}$loop{{loopdepth}}_index++;
+{% endif%}
+{% if loop_revindex -%}
+	$loop{{loopdepth}}_revindex--;
+{% endif %}
+{{body}}
+}}
+{% if else %}
+ else { 
+{{else}} 
+}{% endif %}
+
+{%- endblock %}
+
+####################################################################
+## представление тега блок в функции 
+##
+{%- block callblock -%}
+	{% set x=name %}
+	{%- if x -%}
+	   $this->_{{x}}($par) 
+	{%- endif -%}
+{% endblock %}
+
+####################################################################
+## представление тега блок 
+##
+{%- block block -%}
+{% if name %}
+{% if tag=='macros' %}
+function _{{name}}(&$namedpar
+{%- for p in param %},${{p.name}}{%if p.value%}={{p.value}}{% else %}=0{%endif%}{% endfor -%}){
+extract($namedpar);
+{% else %}
+function _{{name}}(&$par){
+{% endif %}
+{% endif %}		
+{% for blk in data%}
+{%if blk.string  %}
+{% if loop.first and name %}
+$result={{ blk.string|join('
+    .') }};
+{% else %}
+$result.={{ blk.string|join('
+    .') }};
+{% endif %}    
+{% else %}
+{{ blk.data}};    	
+{%endif %}
+{%- endfor %}
+{% if name %}
+return $result;
+}
+{% endif %}	
+{%- endblock -%}
+
+####################################################################
+## представление тега IF  
+##
+{%- block if -%}
+{%set if_index=1 %}
+{%set if_last=length(data) %}
+{% for  d in data %}
+{% if if_index==1 -%}
+if( {{d.if}} ) {
+{{d.then}}
+}
+{%- elif d.if or (if_index!=if_last) %}
+ elseif( {{d.if}} ) {
+{{d.then}}
+}
+{%- else %}
+ else {
+{{d.then}}
+}
+{%- endif %}	
+{% set if_index=if_index+1 %}
+{% endfor %}
+{%- endblock -%}

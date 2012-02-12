@@ -1,0 +1,21 @@
+{% import 'macros.jtpl' %}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+    <html lang="en">
+      <head>
+        <title>My Webpage</title>
+      </head>
+      <body>
+      <h1>My Webpage</h1>
+        {{ a_variable }}
+        
+        <ul id="navigation">
+        {% for item in navigation %}
+          <li><a href="{{ item.href }}">{{ item.caption }}</a></li>
+        {% endfor %}
+        </ul>
+        
+<p>{{ input('username') }}</p>
+<p>{{ input('password', type='password') }}</p>
+        
+      </body>
+    </html>
