@@ -1,3 +1,3 @@
-call ..\..\env.bat
-%php_exe% -q  ../../preprocessor/preprocessor.php ../rights/templater/config.xml
+call ..\env.bat
+%PHPBIN% -q  %PROCESSOR% /Ddst=build config.xml
 pause
