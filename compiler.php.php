@@ -27,12 +27,15 @@ class php_compiler extends tpl_parser {
 			->newOp2('& << >>',3)
 			// однопараметровые фильтры
 			// ну очень служебные функции
-			->newOpR('loop',array($this,'operand_loop'))
-			->newOpR('self','$par','TYPE_XID')
-			->newOp1('now','date(%s)')
+            ->newFunc('defined','defined(%s)','SB')
+            ->newOpR('loop',array($this,'operand_loop'))
+            ->newOpR('self','self','TYPE_XID')
+            ->newOpR('_self','self','TYPE_XID')
+            ->newOp1('now','date(%s)')
 			// фильтры и тесты
-			->newFunc('e','htmlspecialchars(%s)','SS')
-			->newFunc('escape','htmlspecialchars(%s)','SS')
+            ->newFunc('e','htmlspecialchars(%s)','SS')
+            ->newFunc('raw','%s','SS')
+            ->newFunc('escape','htmlspecialchars(%s)','SS')
 			->newFunc('replace',array($this,'function_replace'),'SSSS')
 			->newFunc('length','count(%s)','DI')
 			->newFunc('lipsum','$this->func_lipsum(%s)')
@@ -42,7 +45,8 @@ class php_compiler extends tpl_parser {
 			->newFunc('slice','$this->func_slice(%s)')
 			->newFunc('range','$this->func_range(%s)')
 			->newFunc('keys','$this->func_keys(%s)')
-			->newFunc('callex','$this->callex(%s)')
+            ->newFunc('callex','$this->callex(%s)')
+            ->newFunc('call','$this->call($par,%s)')
             ->newFunc('translit','translit(%s)')
             ->newFunc('format','sprintf(%s)')
 			->newFunc('truncate','$this->func_truncate(%s)')
@@ -68,7 +72,7 @@ class php_compiler extends tpl_parser {
     	  $lexpos=$k;$line=$v; 
     	}
     	
-      $mess.=sprintf('line:%s, pos:%s lex:"%s"'
+      $mess.=sprintf("\n".'line:%s, pos:%s lex:"%s"'
         ,$line+1,pps($lex->pos,-1)-$lexpos, pps($lex->val,-1));
     }
     throw new Exception($mess);

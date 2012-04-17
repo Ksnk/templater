@@ -7,8 +7,9 @@ require_once('/simpletest/reporter.php');
 if (isset($_SERVER['SCRIPT_URI'])) {
     $base_uri = $_SERVER['SCRIPT_URI'];
 } elseif (isset($_SERVER['HTTP_HOST']) && isset($_SERVER['PHP_SELF'])) {
-    $base_uri = 'http://'. $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
-};
+    $base_uri = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
+}
+;
 
 $test = &new TestSuite('Remote tests');
 

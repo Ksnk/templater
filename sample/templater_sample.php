@@ -74,16 +74,16 @@ $data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
  $data=array('foo'=>array('bar'=>'xxx'));
 		//$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
 		$data=array();
-/**!!!!!!!!!!!!!!!!!!! не работает!!!!!!!!!!!!!!!!!! */
+/**!!!!!!!!!!!!!!!!!!! РЅРµ СЂР°Р±РѕС‚Р°РµС‚!!!!!!!!!!!!!!!!!! */
 $s='{%if not user.right["*"] %}*{%endif%}
 {%if not right["*"] %}*{%endif%}
 {%if not right[1] %}*{%endif%}';	  
-		/**!!!!!!!!!!!!!!!!!!!  ошибка трансляции split - макра!!!!!!!!!!!!!!!!!! */
+		/**!!!!!!!!!!!!!!!!!!!  РѕС€РёР±РєР° С‚СЂР°РЅСЃР»СЏС†РёРё split - РјР°РєСЂР°!!!!!!!!!!!!!!!!!! */
 	$s=	'{% for column in list|split(columns) %}
 {% for l in column %}
 {{l.url}}
 {#<table class="tahoma thetable"><tr>
-<th>Имя</th><th>размер</th><th>info</th>
+<th>РРјСЏ</th><th>СЂР°Р·РјРµСЂ</th><th>info</th>
 </tr><tr><td>%data%</td></tr>
 </table>
 </div>
@@ -96,7 +96,7 @@ $s='{%if not user.right["*"] %}*{%endif%}
 
 {% endfor %}
 {% endfor %}'  ;    
-/**!!!!!!!!!!!!!!!!!!! вставлять тесты сюда !!!!!!!!!!!!!!!!! */  
+/**!!!!!!!!!!!!!!!!!!! РІСЃС‚Р°РІР»СЏС‚СЊ С‚РµСЃС‚С‹ СЃСЋРґР° !!!!!!!!!!!!!!!!! */  
 	echo '<pre>'.htmlspecialchars(test_cmpl($s,$data)).'</pre>';/**/
 	
 //_template();

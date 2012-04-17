@@ -1,6 +1,6 @@
 ####################################################################
-## 
-##  файл шаблонов для шаблонизатора 
+##
+##  С„Р°Р№Р» С€Р°Р±Р»РѕРЅРѕРІ РґР»СЏ С€Р°Р±Р»РѕРЅРёР·Р°С‚РѕСЂР°
 ##
 ####################################################################
 
@@ -33,71 +33,71 @@ ${{imp}}=new tpl_{{imp}}();
 $this->macro=array_merge($this->macro,${{imp}}->macro);
 {%-endfor%}
 }
-{% for func in data %} 
+{% for func in data %}
 {{ func }}
 
-{% endfor %} 
+{% endfor %}
 }
 {% endblock %}
 
 ####################################################################
-##  выполнение тега MACRO
+##  РІС‹РїРѕР»РЅРµРЅРёРµ С‚РµРіР° MACRO
 ##
 {%- block callmacro -%}
 if(!empty($this->macro['{{name}}']))
-  $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p.key}}'=>{{p.value}},{%endfor%}){%if param%},{{param|join(', ')}}{% endif %})
+$result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p.key}}'=>{{p.value}},{%endfor%}){%if param%},{{param|join(', ')}}{% endif %})
 {%- endblock -%}
 
 ####################################################################
-##  представление тега SET
+##  РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° SET
 ##
 {%- block set %}{{id}}={{res}}{%- endblock %}
 
 ####################################################################
-## представление тега FOR 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° FOR
 ##
 {%- block for -%}
 $loop{{loopdepth}}_array=ps({{in}});
 {% if loop_index -%}
-	$loop{{loopdepth}}_index=0;
+$loop{{loopdepth}}_index=0;
 {% endif%}
 {% if loop_last -%}
-	$loop{{loopdepth}}_last=count($loop{{loopdepth}}_array);
+$loop{{loopdepth}}_last=count($loop{{loopdepth}}_array);
 {% endif%}
 {% if loop_revindex -%}
-	$loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
+$loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
 {% endif%}
 {% if loop_cycle -%}
-	$loop{{loopdepth}}_cycle={{loop_cycle}};
+$loop{{loopdepth}}_cycle={{loop_cycle}};
 {% endif%}
 if (!empty($loop{{loopdepth}}_array)){
 foreach($loop{{loopdepth}}_array as {{index}}){
 {% if loop_index %}$loop{{loopdepth}}_index++;
 {% endif%}
 {% if loop_revindex -%}
-	$loop{{loopdepth}}_revindex--;
+$loop{{loopdepth}}_revindex--;
 {% endif %}
 {{body}}
 }}
 {% if else %}
- else { 
-{{else}} 
+else {
+{{else}}
 }{% endif %}
 
 {%- endblock %}
 
 ####################################################################
-## представление тега блок в функции 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° Р±Р»РѕРє РІ С„СѓРЅРєС†РёРё
 ##
 {%- block callblock -%}
-	{% set x=name %}
-	{%- if x -%}
-	   $this->_{{x}}($par) 
-	{%- endif -%}
+{% set x=name %}
+{%- if x -%}
+$this->_{{x}}($par)
+{%- endif -%}
 {% endblock %}
 
 ####################################################################
-## представление тега блок 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° Р±Р»РѕРє
 ##
 {%- block block -%}
 {% if name %}
@@ -108,7 +108,7 @@ extract($namedpar);
 {% else %}
 function _{{name}}(&$par){
 {% endif %}
-{% endif %}		
+{% endif %}
 {% for blk in data%}
 {%if blk.string  %}
 {% if loop.first and name %}
@@ -117,19 +117,19 @@ $result={{ blk.string|join('
 {% else %}
 $result.={{ blk.string|join('
     .') }};
-{% endif %}    
+{% endif %}
 {% else %}
-{{ blk.data}};    	
+{{ blk.data}};
 {%endif %}
 {%- endfor %}
 {% if name %}
 return $result;
 }
-{% endif %}	
+{% endif %}
 {%- endblock -%}
 
 ####################################################################
-## представление тега IF  
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° IF
 ##
 {%- block if -%}
 {%set if_index=1 %}
@@ -140,14 +140,14 @@ if( {{d.if}} ) {
 {{d.then}}
 }
 {%- elif d.if or (if_index!=if_last) %}
- elseif( {{d.if}} ) {
+elseif( {{d.if}} ) {
 {{d.then}}
 }
 {%- else %}
- else {
+else {
 {{d.then}}
 }
-{%- endif %}	
+{%- endif %}
 {% set if_index=if_index+1 %}
 {% endfor %}
 {%- endblock -%}

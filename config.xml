@@ -37,7 +37,7 @@ ver: '.$tag.', Last build: '.$buildtime.'
     <!-- ************************************** -->
     <files dstdir="build">
         <file>history.txt</file>
-        <echo name="history.txt"  depend="history.txt">
+        <echo name="history.txt" depend="history.txt">
             <![CDATA[<%=POINT::get('history','markdown-txt');%>]]>
         </echo>
         <echo name="readme.html" depend="readme.markdown">
@@ -49,20 +49,20 @@ ver: '.$tag.', Last build: '.$buildtime.'
         </echo>
     </files>
 
-	<!-- ************************************** -->
-	<!-- **** core files                   **** -->
-	<!-- ************************************** -->
+    <!-- ************************************** -->
+    <!-- **** core files                   **** -->
+    <!-- ************************************** -->
     <files dstdir="build/lib">
         <file>template_parser.class.php</file>
         <file>compiler.class.php</file>
         <file>compiler.php.php</file>
         <file dir="../nat2php">nat2php.class.php</file>
     </files>
-	<files dstdir="build/render">
+    <files dstdir="build/render">
         <file dir="templates">tpl_base.php</file>
         <file dir="templates">tpl_compiler.php</file>
         <file dir="templates">compiler.jtpl</file>
-	</files>
+    </files>
     <files dstdir="build/samples">
         <file dir="sample">index.php</file>
         <file dir="sample">render.php</file>

@@ -1,8 +1,8 @@
 ####################################################################
-## 
-##  файл шаблонов генерации JavaScript
-##  предполагаемый способ работы
-##  var tpl=new templater(); x.innerHTML=tpl('myTemplate',data); 
+##
+##  С„Р°Р№Р» С€Р°Р±Р»РѕРЅРѕРІ РіРµРЅРµСЂР°С†РёРё JavaScript
+##  РїСЂРµРґРїРѕР»Р°РіР°РµРјС‹Р№ СЃРїРѕСЃРѕР± СЂР°Р±РѕС‚С‹
+##  var tpl=new templater(); x.innerHTML=tpl('myTemplate',data);
 ##
 ####################################################################
 
@@ -12,21 +12,21 @@
 {%- block class -%}
 function tpl_{{name}}(){
 
-{% for func in data %} 
+{% for func in data %}
 {{ func }}
 
-{% endfor %} 
+{% endfor %}
 }
-tpl_{{name}}.prototype= tpl_{{extends |default('base') }} 
+tpl_{{name}}.prototype= tpl_{{extends |default('base') }}
 {% endblock %}
 
 ####################################################################
-##  представление тега SET
+##  РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° SET
 ##
 {%- block set %}var {{id}}={{res}}{%- endblock %}
 
 ####################################################################
-## представление тега FOR 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° FOR
 ##
 {%- block for -%}
 {% if {{index}}%}
@@ -38,38 +38,38 @@ foreach({{in}} in {{index}}){
 {%- endblock %}
 
 ####################################################################
-## представление тега блок в функции 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° Р±Р»РѕРє РІ С„СѓРЅРєС†РёРё
 ##
 {%- block callblock -%}
-	{% set x=name %}
-	{%- if x -%}
-	   this._{{x}}(par) 
-	{%- endif -%}
+{% set x=name %}
+{%- if x -%}
+this._{{x}}(par)
+{%- endif -%}
 {% endblock %}
 
 ####################################################################
-## представление тега блок 
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° Р±Р»РѕРє
 ##
 {%- block block -%}
 {% if name %}
 this._{{name}} = function (par){
 var $result='';
-{% endif %}		
+{% endif %}
 {% for blk in data%}
 {%if blk.string %}{%if blk.string!="''" %}
 $result+={{ blk.string }};
 {%endif %}{% else %}
-{{ blk.data}};    	
+{{ blk.data}};
 {%endif %}
 {%- endfor %}
 {% if name %}
 return $result;
 }
-{% endif %}	
+{% endif %}
 {%- endblock -%}
 
 ####################################################################
-## представление тега IF  
+## РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РµРіР° IF
 ##
 {%- block if -%}
 {%set loop_index=1 %}
@@ -80,14 +80,14 @@ if( {{d.if}} ) {
 {{d.then}}
 }
 {%- elif d.if or (loop_index!=loop_last) %}
- elseif( {{d.if}} ) {
+elseif( {{d.if}} ) {
 {{d.then}}
 }
 {%- else %}
- else {
+else {
 {{d.then}}
 }
-{%- endif %}	
+{%- endif %}
 {% set loop_index=loop_index+1 %}
 {% endfor %}
 {%- endblock -%}
