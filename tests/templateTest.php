@@ -83,6 +83,41 @@ class templateTest extends PHPUnit_Framework_TestCase
           }*/
     }
 
+    /**
+     * тесты на тег FOR
+     */
+    function test_test12()
+    {
+        $data = array();
+        $s = '
+        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
+    {% if loop.first %}{{ item }}{% endif -%}
+    {% if loop.last %}{{ item }}{% endif -%}
+    {{ item }}
+{%- endfor %}';
+        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
+        $this->assertEquals(
+            $this->_test_tpl($s, $data), $pattern
+        );
+    }
+
+    function test_test10()
+    {
+        $data = array();
+        //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
+        $s = '{#
+        it\'s a test
+        #}
+
+        {% for item in [1,2,3,4,5,6,7,8,9] -%}
+    {{ item }}
+{%- endfor %}';
+        $pattern = '123456789';
+        $this->assertEquals(
+            $this->_test_tpl($s, $data), $pattern
+        );
+    }
+
     function testLipsum()
     {
         $data = array('func' => 'fileman', 'data' => '<<<>>>');
@@ -92,7 +127,17 @@ class templateTest extends PHPUnit_Framework_TestCase
             $this->_test_cmpl($s, $data), $pattern
         );
     }
-
+  /*
+    function testLipsumError()
+    {
+        $data = array('func' => 'fileman', 'data' => '<<<>>>');
+        $s = '{{ lipsum }}';
+        $pattern = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data,true), $pattern
+        );
+    }
+       */
     /**
      * тестируем уже готовые шаблоны
      */
@@ -259,23 +304,6 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    function test_test10()
-    {
-        $data = array();
-        //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
-        $s = '{#
-        it\'s a test 
-        #} 
-        
-        {% for item in [1,2,3,4,5,6,7,8,9] -%}
-    {{ item }}
-{%- endfor %}';
-        $pattern = '123456789';
-        $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
-        );
-    }
-
     function test_test11()
     {
         $data = array();
@@ -293,23 +321,6 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /**
-     * тесты на тег FOR
-     */
-    function test_test12()
-    {
-        $data = array();
-        $s = '
-        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
-    {% if loop.first %}{{ item }}{% endif -%}
-    {% if loop.last %}{{ item }}{% endif -%}
-    {{ item }}
-{%- endfor %}';
-        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
-        $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
-        );
-    }
 
     function test_test13()
     {

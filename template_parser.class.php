@@ -15,16 +15,17 @@ class tpl_parser extends nat_parser
 {
     protected
 
-        $opensentence = array() // комплект открытых тегов, для портирования
         // в них сопутствующей информации
 
-    , $locals = array() // стек идентификаторов с областью видимости
-    , $ids_low = 0 // нижняя граница области видимости
-    ;
-    /** @var string - скрипт для выполнения */
-    public $script
+        $locals = array(), // стек идентификаторов с областью видимости
+        $ids_low = 0; // нижняя граница области видимости
+
+    public
+        $opensentence = array(), // комплект открытых тегов, для портирования
+        /** @var string - скрипт для выполнения */
+        $script,
         /** @var boolean - сохранять-несохранять */
-    , $storeparams;
+        $storeparams;
 
     function __construct()
     {
@@ -43,7 +44,12 @@ class tpl_parser extends nat_parser
         $this->error_msg['unexpected construction'] = 'something strange catched.';
     }
 
-
+    /**
+     * Вызов функции op1 с параметрами op2
+     * @param  operand $op1
+     * @param  operand $op2
+     * @return operand
+     */
     function function_callstack($op1, $op2)
     {
         //вырезка из массива
@@ -128,8 +134,7 @@ class tpl_parser extends nat_parser
                     $this->back();
                     break 2;
                 }
-                if (method_exists($this, 'tag_' . $this->op->val)) {
-                    call_user_func(array($this, 'tag_' . $this->op->val));
+                if ($this->exec_tag($this->op->val)) {
                     $op = $this->popOp();
                     if (!empty($op)) {
                         $op = $this->to('S', $op);
@@ -268,7 +273,8 @@ class tpl_parser extends nat_parser
         $this->curlex = 0;
         $types = array();
         $curptr = 0;
-        // оформляем пробелы
+
+        // привязываем номер строки к позиции транслятора
         $this->scanNl($script);
 
         // забираем лексемную регулярку
@@ -276,8 +282,8 @@ class tpl_parser extends nat_parser
         $reg0 = "~(.*?)(";
         foreach (array('COMMENT_LINE', 'VARIABLE_START', 'COMMENT_START') as $r)
             $reg0 .= preg_quote($this->options[$r], '#~') . '|';
-        $reg0 .= preg_quote($this->options['BLOCK_START'], '#~') . '\-?|$)~si';
-        //echo $reg0;
+        $reg0 .= preg_quote($this->options['BLOCK_START'], '#~') . '|$)(\-?)~si';
+
         $total = strlen($script);
 
         // найти начало следующего тега шаблонизатора
@@ -285,6 +291,7 @@ class tpl_parser extends nat_parser
             if ($m[0] == '') break; // что-то незаладилось в реге
 
             if ($m[1] !== '') {
+                // $this->lex[] = $this->oper('_echo_', 'TYPE_OPERATION', $curptr);
                 $this->lex[] = $this->oper($m[1], 'TYPE_STRING', $curptr);
             }
 
@@ -303,22 +310,18 @@ class tpl_parser extends nat_parser
                     $curptr += strlen($m[0]);
                     continue;
                 }
-            } elseif ($m[2] == $this->options['BLOCK_START']) {
-                $this->lex[] = $this->oper('', 'TYPE_EVAL', $curptr);
-            } elseif ($m[2] == $this->options['BLOCK_START'] . '-') {
-                //трим предыдущей лексемы
-                if (!empty($this->lex)) {
+            } else {
+                if ($m[3] == '-' && !empty($this->lex)) {
                     $lex = $this->lex[count($this->lex) - 1];
                     if ($lex->type == "TYPE_STRING") {
                         $lex->val = preg_replace('/\s+$/s', '', $lex->val);
                     }
                 }
 
-                $this->lex[] = $this->oper('', 'TYPE_EVAL', $curptr);
-            } else {
-                $this->lex[] = $this->oper('', 'TYPE_ECHO', $curptr);
+                $this->lex[] = $this->oper(''
+                    , $m[2] == $this->options['BLOCK_START'] ? 'TYPE_EVAL' : 'TYPE_ECHO'
+                    , $curptr);
             }
-            ;
 
             // отрезаем следующую лексему шаблонизатора
             $first = true;
@@ -333,7 +336,7 @@ class tpl_parser extends nat_parser
                         $op->type .= '2';
 
                     $this->lex[] = $op;
-                } else
+                } else {
                     for ($x = count($types) - 1; $x > 2; $x--) {
                         if (isset($m[$x]) && $m[$x] != "") {
                             $op = $this->oper(strtolower($m[$x]), $types[$x], $pos);
@@ -364,7 +367,7 @@ class tpl_parser extends nat_parser
                                 break;
                         }
                     }
-                ;
+                }
                 $first = false;
             }
         }
@@ -501,6 +504,7 @@ class tpl_parser extends nat_parser
         $this->getNext();
         if ($this->op->type != 'TYPE_COMMA')
             $this->getNext();
+        // добавляем в открытый класс определение нового метода
         $sent =& $this->opensent('class');
         if (!empty($sent)) {
             if (empty($sent['macro'])) {
@@ -529,72 +533,6 @@ class tpl_parser extends nat_parser
      * отрабoтка тега for
      * @internal param $id
      */
-    function tag_for()
-    {
-        // парсинг тега for
-        // полная форма:
-        // for OPERAND in EXPRESSION [if EXPRESSION]
-        // промежуточный else
-        // финишный endfor
-        $for = array('tag' => 'for', 'operand' => count($this->operand));
-        $this->opensentence[] = &$for;
-        //$this->newop('(');
-        $this->getExpression(); // получили имя идентификатора
-        $for['index'] = $this->newId($this->popOp());
-        $this->newId($this->oper('loop', 'TYPE_ID'));
-        $for['index'] = $this->to(array('I', 'value'), $for['index']);
-        do {
-            $this->getNext();
-            switch (strtolower($this->op->val)) {
-                case 'in':
-                    $this->getExpression();
-                    $for['in'] = $this->popOp();
-                    $for['in'] = $this->to(array('I', 'value'), $for['in']);
-                    break;
-                case 'if':
-                    $this->getExpression();
-                    $for['if'] = $this->to(array('*', 'value'), $this->popOp());
-                    break;
-                case 'recursive':
-                    $for['recursive'] = true;
-                    break;
-                default:
-                    if ($this->op->type == 'TYPE_COMMA')
-                        break 2;
-                    else
-                        $this->error('unexpected construction1');
-            }
-        } while (true);
-        //$this->opensentence[]=$for;
-
-        $for['else'] = false;
-        do {
-            $this->block_internal(array('else', 'endfor'));
-            $this->getNext();
-            $op = $this->popOp();
-            if ($this->op->val == 'else') {
-                $for['body'] = $this->to(array('TYPE_SENTENSE', 'value'), $op);
-                $for['else'] = true;
-                $this->getNext(); // съели символ, закрывающий тег
-            } elseif ($this->op->val == 'endfor') {
-                $this->getNext(); // съели символ, закрывающий тег
-                if ($for['else']) {
-                    $for['else'] = $this->to(array('TYPE_SENTENSE', 'value'), $op);
-                } else {
-                    $for['body'] = $this->to(array('TYPE_SENTENSE', 'value'), $op);
-                }
-                // генерируем все это добро
-                $this->pushOp($this->oper($this->template('for', $for), 'TYPE_SENTENSE'));
-                do {
-                    $op = array_pop($this->opensentence);
-                    if ($op['tag'] == 'for') break;
-                } while (!empty($op) && true);
-
-                break;
-            }
-        } while (true);
-        //$this->getNext(); // съели символ, закрывающий тег
-    }
 
     function tag_extends()
     {
@@ -738,5 +676,115 @@ class tpl_parser extends nat_parser
                 printf('have no template "%s:%s"', 'tpl_compiler', '_' . $idx);
         }
         return '';
+    }
+
+    /**
+     * {% macro | for |
+     * проверить, есть ли зарезервированные обработчики этого тега
+     * Проверяем
+     * - список классов-расширений
+     * - список собственных методов
+     * @param string $tag
+     */
+    function exec_tag($tag)
+    {
+        $name = 'tag_' . $tag;
+        if (class_exists($name)) {
+            $tag = new $name();
+            $tag->execute($this);
+        } else if (method_exists($this, $name)) {
+            call_user_func(array($this, $name));
+        } else
+            return false;
+
+        return true;
+    }
+}
+
+/**
+ * класс - for
+ */
+
+class tag_for
+{
+    /**
+     * функция выдает операнд LOOP
+     */
+    function _loop(&$op, &$parcer)
+    {
+        $op = $parcer->oper('loop', 'TYPE_OBJECT');
+        $op->handler = array($parcer, 'operand_loop');
+        return $op;
+    }
+
+    /**
+     * @param tpl_parser $parcer
+     */
+    function execute($parcer)
+    {
+        // парсинг тега for
+        // полная форма:
+        // for OPERAND in EXPRESSION [if EXPRESSION]
+        // промежуточный else
+        // финишный endfor
+        $for = array('tag' => 'for', 'operand' => count($parcer->operand));
+        $parcer->opensentence[] = &$for;
+        $parcer->getExpression(); // получили имя идентификатора
+        $for['index'] = $parcer->newId($parcer->popOp());
+        $parcer->newOpr('loop', array($this, '_loop'));
+        //$parcer->newId($parcer->oper('loop', 'TYPE_ID'));
+        $for['index'] = $parcer->to(array('I', 'value'), $for['index']);
+        do {
+            $parcer->getNext();
+            switch (strtolower($parcer->op->val)) {
+                case 'in':
+                    $parcer->getExpression();
+                    $for['in'] = $parcer->popOp();
+                    $for['in'] = $parcer->to(array('I', 'value'), $for['in']);
+                    break;
+                case 'if':
+                    $parcer->getExpression();
+                    $for['if'] = $parcer->to(array('*', 'value'), $parcer->popOp());
+                    break;
+                case 'recursive':
+                    $for['recursive'] = true;
+                    break;
+                default:
+                    if ($parcer->op->type == 'TYPE_COMMA')
+                        break 2;
+                    else
+                        $parcer->error('unexpected construction1');
+            }
+        } while (true);
+        //$parcer->opensentence[]=$for;
+
+        $for['else'] = false;
+        do {
+            $parcer->block_internal(array('else', 'endfor'));
+            $parcer->getNext();
+            $op = $parcer->popOp();
+            if ($parcer->op->val == 'else') {
+                $for['body'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                $for['else'] = true;
+                $parcer->getNext(); // съели символ, закрывающий тег
+            } elseif ($parcer->op->val == 'endfor') {
+                $parcer->getNext(); // съели символ, закрывающий тег
+                if ($for['else']) {
+                    $for['else'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                } else {
+                    $for['body'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                }
+                // генерируем все это добро
+                $parcer->pushOp($parcer->oper($parcer->template('for', $for), 'TYPE_SENTENSE'));
+                do {
+                    $op = array_pop($parcer->opensentence);
+                    if ($op['tag'] == 'for') break;
+                } while (!empty($op) && true);
+
+                break;
+            }
+        } while (true);
+        //$parcer->getNext(); // съели символ, закрывающий тег
+
     }
 }
