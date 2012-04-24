@@ -48,6 +48,10 @@ class templateTest extends PHPUnit_Framework_TestCase
         $classnumber++;
         $calc = new php_compiler();
         $calc->makelex($tpl);
+
+//        foreach($calc->lex as $v) echo $v->val.'
+//';
+
 //		try {
         $result = $calc->tplcalc('test' . $classnumber);
 
@@ -66,13 +70,16 @@ class templateTest extends PHPUnit_Framework_TestCase
     /**
      * тестирование шаблона без трансляции нового класса
      */
-    function _test_tpl($tpl, $data)
+    function _test_tpl($tpl, $data, $show = false)
     {
         $calc = new php_compiler();
         $calc->makelex($tpl);
+//        foreach($calc->lex as $v) echo $v->val.'
+//';
 //		try {
         $result = $calc->block_internal();
         $x = '$result="";' . $calc->popOp()->val . ' return $result;';
+        if ($show) echo $x . "\n\n";
         //if (isset($_GET['debug']))
         //	error_log($x,3,'log.log');
         $fnc = create_function('&$par', $x);
@@ -83,21 +90,88 @@ class templateTest extends PHPUnit_Framework_TestCase
           }*/
     }
 
-    /**
-     * тесты на тег FOR
-     */
-    function test_test12()
+    function test_test13()
     {
         $data = array();
         $s = '
         {%- for item in ["on\\\\e\'s ","one\"s "] -%}
-    {% if loop.first %}{{ item }}{% endif -%}
-    {% if loop.last %}{{ item }}{% endif -%}
-    {{ item }}
+    {{ loop.index }}{{ item }}{{ loop.revindex }}{{ item }}
 {%- endfor %}';
-        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
+        $pattern = '1on\\e\'s 2on\\e\'s 2one"s 1one"s ';
         $this->assertEquals(
             $this->_test_tpl($s, $data), $pattern
+        );
+    }
+
+    function test_test25()
+    {
+        $data = array(
+            'topics' => array(
+                'topic1' => array('Message 1 of topic 1', 'Message 2 of topic 1'),
+                'topic2' => array('Message 1 of topic 2', 'Message 2 of topic 2'),
+            ));
+        $s = '{% for topic, messages in topics %}
+       * {{ loop.index }}: {{ topic }}
+     {% for message in messages %}
+         - {{ loop.parent.loop.index }}.{{ loop.index }}: {{ message }}
+     {% endfor %}
+   {% endfor %}';
+        $pattern = '
+       * 1: topic1
+         - 1.1: Message 1 of topic 1
+         - 1.2: Message 2 of topic 1
+       * 2: topic2
+         - 2.1: Message 1 of topic 2
+         - 2.2: Message 2 of topic 2';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+
+    function test_test18()
+    {
+        $data = array('data' => '<<<>>>');
+        $s = ' <table>
+	{% for x in [1,2] %}
+	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
+	one</td><td>two</td></tr>
+	{% endfor %}
+	</table>';
+        $pattern = ' <table>
+	<tr class="odd"><td>1</td><td>
+	one</td><td>two</td></tr>
+	<tr class="even"><td>2</td><td>
+	one</td><td>two</td></tr>
+	</table>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    function test_test16()
+    {
+        $data = array('data' => array());
+        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
+    <input type="{{ type }}" name="{{ name }}" value="{{
+        value|e }}" size="{{ size }}">
+{%- endmacro -%}
+<p>{{ input(\'username\') }}</p>
+<p>{{ input(\'password\', type=\'password\') }}</p>';
+        $pattern = '<p><input type="text" name="username" value="" size="20"></p>
+<p><input type="password" name="password" value="" size="20"></p>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    function test_test1()
+    {
+        $data = array('if' => "'hello'", 'then' => 'world');
+        $s = 'if( {{if}} ){ {{then }} };';
+        $this->assertEquals(
+            $this->_test_tpl($s, $data),
+            'if( \'hello\' ){ world };'
         );
     }
 
@@ -118,6 +192,24 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * тесты на тег FOR
+     */
+    function test_test12()
+    {
+        $data = array();
+        $s = '
+        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
+    {% if loop.first %}{{ item }}{% endif -%}
+    {% if loop.last %}{{ item }}{% endif -%}
+    {{ item }}
+{%- endfor %}';
+        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
+        $this->assertEquals(
+            $this->_test_tpl($s, $data), $pattern
+        );
+    }
+
     function testLipsum()
     {
         $data = array('func' => 'fileman', 'data' => '<<<>>>');
@@ -127,30 +219,21 @@ class templateTest extends PHPUnit_Framework_TestCase
             $this->_test_cmpl($s, $data), $pattern
         );
     }
-  /*
-    function testLipsumError()
-    {
-        $data = array('func' => 'fileman', 'data' => '<<<>>>');
-        $s = '{{ lipsum }}';
-        $pattern = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data,true), $pattern
-        );
-    }
-       */
+
+    /*
+ function testLipsumError()
+ {
+     $data = array('func' => 'fileman', 'data' => '<<<>>>');
+     $s = '{{ lipsum }}';
+     $pattern = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada ';
+     $this->assertEquals(
+         $this->_test_cmpl($s, $data), $pattern
+     );
+ }
+    */
     /**
      * тестируем уже готовые шаблоны
      */
-
-    function test_test1()
-    {
-        $data = array('if' => "'hello'", 'then' => 'world');
-        $s = 'if( {{if}} ){ {{then }} };';
-        $this->assertEquals(
-            $this->_test_tpl($s, $data),
-            'if( \'hello\' ){ world };'
-        );
-    }
 
     function test_test2()
     {
@@ -188,10 +271,11 @@ class templateTest extends PHPUnit_Framework_TestCase
 <ul>
     {%- for user in users %}
   <li>{{ user.username|e }}</li>
-{% endfor %}
+{%- endfor %}
 </ul>';
         $pattern = '<h1>Members</h1>
-<ul>  <li>one</li>
+<ul>
+  <li>one</li>
   <li>two</li>
 </ul>';
         $this->assertEquals(
@@ -229,9 +313,9 @@ class templateTest extends PHPUnit_Framework_TestCase
 </head>
 <body>
     <ul id="navigation">
-    {% for item in navigation %}
+    {%- for item in navigation %}
         <li><a href="{{ item.href }}">{{ item.caption }}</a></li>
-    {% endfor %}
+    {%- endfor %}
     </ul>
 
     <h1>My Webpage</h1>
@@ -245,13 +329,14 @@ class templateTest extends PHPUnit_Framework_TestCase
 </head>
 <body>
     <ul id="navigation">
-            <li><a href="one">two</a></li>
-            <li><a href="one">two</a></li>
-            <li><a href="one">two</a></li>
-        </ul>
+        <li><a href="one">two</a></li>
+        <li><a href="one">two</a></li>
+        <li><a href="one">two</a></li>
+    </ul>
 
     <h1>My Webpage</h1>
-    hello!</body>
+    hello!
+</body>
 </html>';
         $this->assertEquals(
             $this->_test_tpl($s, $data), $pattern
@@ -321,20 +406,6 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
-    function test_test13()
-    {
-        $data = array();
-        $s = '
-        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
-    {{ loop.index }}{{ item }}{{ loop.revindex }}{{ item }}
-{%- endfor %}';
-        $pattern = '1on\\e\'s 2on\\e\'s 2one"s 1one"s ';
-        $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
-        );
-    }
-
     function test_test14()
     {
         $data = array('data' => array());
@@ -360,47 +431,11 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    function test_test16()
-    {
-        $data = array('data' => array());
-        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
-    <input type="{{ type }}" name="{{ name }}" value="{{
-        value|e }}" size="{{ size }}">
-{%- endmacro -%}
-<p>{{ input(\'username\') }}</p>
-<p>{{ input(\'password\', type=\'password\') }}</p>';
-        $pattern = ' <p><input type="text" name="username" value="" size="20"></p>
-<p><input type="password" name="password" value="" size="20"></p>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
     function test_test17()
     {
         $data = array('data' => '<<<>>>');
         $s = ' <p>{{data|e|default(\'nothing\')}}</p>';
         $pattern = ' <p>&lt;&lt;&lt;&gt;&gt;&gt;</p>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-    function test_test18()
-    {
-        $data = array('data' => '<<<>>>');
-        $s = ' <table>
-	{% for x in [1,2] -%}
-	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
-	one</td><td>two</td></tr>
-	{% endfor -%}
-	</table>';
-        $pattern = ' <table>
-	<tr class="odd"><td>1</td><td>
-	one</td><td>two</td></tr>
-	<tr class="even"><td>2</td><td>
-	one</td><td>two</td></tr>
-	</table>';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -470,15 +505,15 @@ class templateTest extends PHPUnit_Framework_TestCase
                 array('id' => 6, 'text' => 'six')
             ),
         ));
-        $s = '{% for  rr in rows -%} {% if not loop.first -%}
+        $s = '{% for  rr in rows %} {% if not loop.first %}
 <tr>
 <td style="height:35px;"></td>
 {% set bg=loop.cycle(\'bglgreen\',\'bggreen\') %}
 {% if loop.last %}{%set last=\'border-bottom:none;\' %}
-{% else %}{%set last=\'\' %}{% endif %}		
+{% else %}{%set last=\'\' %}{% endif %}
 <th class="{{bg}}" style="border-left:none;{{last}}">{{loop.index0}}</th>
 {% for  r in rr %}
-<td class="{{bg}}" {% if last %}style="{{last}}"{%endif%}>
+<td class="{{bg}}" {% if last %} style="{{last}}"{%endif%}>
 <div id="item_text_{{r.id}}" class="text_edit">{{r.text|default(\'&nbsp;\')}}</div></td>
 {% endfor %}
 <td class="bgdray">
@@ -490,23 +525,23 @@ class templateTest extends PHPUnit_Framework_TestCase
 <input type="button" class="remrec">
 </td>
 </tr>
-
 {% endif %}
 {% endfor %}';
-        $pattern = '<tr>
+        $pattern = '
+<tr>
 <td style="height:35px;"></td>
 <th class="bglgreen" style="border-left:none;">1</th>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_1" class="text_edit">one</div></td>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_2" class="text_edit">two</div></td>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_3" class="text_edit">three</div></td>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_4" class="text_edit">four</div></td>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_5" class="text_edit">five</div></td>
-<td class="bglgreen" >
+<td class="bglgreen">
 <div id="item_text_6" class="text_edit">six</div></td>
 <td class="bgdray">
 <input type="button" class="arrowup"
@@ -517,21 +552,20 @@ class templateTest extends PHPUnit_Framework_TestCase
 <input type="button" class="remrec">
 </td>
 </tr>
-
 <tr>
 <td style="height:35px;"></td>
 <th class="bggreen" style="border-left:none;">2</th>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_1" class="text_edit">one</div></td>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_2" class="text_edit">two</div></td>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_3" class="text_edit">three</div></td>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_4" class="text_edit">four</div></td>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_5" class="text_edit">five</div></td>
-<td class="bggreen" >
+<td class="bggreen">
 <div id="item_text_6" class="text_edit">six</div></td>
 <td class="bgdray">
 <input type="button" class="arrowup"
@@ -542,7 +576,6 @@ class templateTest extends PHPUnit_Framework_TestCase
 <input type="button" class="remrec">
 </td>
 </tr>
-
 <tr>
 <td style="height:35px;"></td>
 <th class="bglgreen" style="border-left:none;border-bottom:none;">3</th>
@@ -566,9 +599,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 <td class="bgdray">
 <input type="button" class="remrec">
 </td>
-</tr>
-
-';
+</tr>';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -578,31 +609,31 @@ class templateTest extends PHPUnit_Framework_TestCase
     {
         $data = array();
         //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
-        $s = '{% for d in [1,2,3,4] %}
+        $s = '{%- for d in [1,2,3,4] %}
   <li><a href="?do=showtour&amp;id={{d.ID}}">{{d.name}}</a></li>
-  {% endfor %}
+  {%- endfor %}
 		</ul>
 	</li>
 	<li>
 		<span>Игроки</span>
 	  <ul>
-  {% for d in [1,2,3,4] %}
+  {%- for d in [1,2,3,4] %}
   <li><a href="?do=player&amp;id={{d.ID}}">{{d.name}}</a></li>
-  {% endfor %}';
-        $pattern = '  <li><a href="?do=showtour&amp;id="></a></li>
-    <li><a href="?do=showtour&amp;id="></a></li>
-    <li><a href="?do=showtour&amp;id="></a></li>
-    <li><a href="?do=showtour&amp;id="></a></li>
-  		</ul>
+  {%- endfor %}';
+        $pattern = '
+  <li><a href="?do=showtour&amp;id="></a></li>
+  <li><a href="?do=showtour&amp;id="></a></li>
+  <li><a href="?do=showtour&amp;id="></a></li>
+  <li><a href="?do=showtour&amp;id="></a></li>
+		</ul>
 	</li>
 	<li>
 		<span>Игроки</span>
 	  <ul>
-    <li><a href="?do=player&amp;id="></a></li>
-    <li><a href="?do=player&amp;id="></a></li>
-    <li><a href="?do=player&amp;id="></a></li>
-    <li><a href="?do=player&amp;id="></a></li>
-  ';
+  <li><a href="?do=player&amp;id="></a></li>
+  <li><a href="?do=player&amp;id="></a></li>
+  <li><a href="?do=player&amp;id="></a></li>
+  <li><a href="?do=player&amp;id="></a></li>';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -630,10 +661,8 @@ class templateTest extends PHPUnit_Framework_TestCase
         $data = array('data' => '<<<>>>');
         $s = '{% macro fileman(list=1,pages=1,type,filter) -%}
 {{list~pages~type~filter}}
-        {%- endmacro -%}
-{{fileman()}}
- {{fileman(pages=3)}}
- {{fileman(1,2,3)}}';
+        {% endmacro -%}
+{{fileman()}} {{fileman(pages=3)}} {{fileman(1,2,3)}}';
         $pattern = '1100 1300 1230';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
@@ -643,8 +672,8 @@ class templateTest extends PHPUnit_Framework_TestCase
     function test_test24()
     {
         $data = array('user' => array('right' => array('*' => 1027)), 'right' => array('1' => 1027));
-        $s = '{%if not user.right["*"] %}1{%endif%}
-{%if not right["*"] %}2{%endif%}
+        $s = '{%if not user.right["*"] %}1{%endif-%}
+{%if not right["*"] %}2{%endif-%}
 {%if not right[1] %}3{%endif%}';
         $pattern = '12';
         $this->assertEquals(
@@ -663,7 +692,7 @@ class templateTest extends PHPUnit_Framework_TestCase
             )));
         $s = file_get_contents(dirname(__FILE__) . '/quick.form.tpl');
 
-        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial,sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="f" class="element"> <span class="required">* </span> f </label> <div class="element error"> <span class="error">f<br/></span> f </div> </div> <div class="row"> <label for=" " class="element"> <span class="required">* </span> </label> <div class="element error"> <span class="error"> <br/></span> </div> </div> <div class="row"> <label for="H" class="element"> <span class="required">* </span> H </label> <div class="element error"> <span class="error">H<br/></span> H </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element "> </div> </div> </form> </div> </body> </html>';
+        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial,sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="f" class="element"><span class="required">* </span> f </label> <div class="element error"><span class="error">f<br/></span> f </div> </div> <div class="row"> <label for=" " class="element"><span class="required">* </span> </label> <div class="element error"><span class="error"> <br/></span> </div> </div> <div class="row"> <label for="H" class="element"><span class="required">* </span> H </label> <div class="element error"><span class="error">H<br/></span> H </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
         $this->assertEquals(
             $this->compress($this->_test_cmpl($s, $data)), $pattern
         );
@@ -675,10 +704,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         $s = '{% macro fileman(list=1,pages=1,type,filter) -%}
 {{list~pages~type~filter}}
         {%- endmacro -%}
-        {{ call (func,1,2,3) }}
- {{fileman()}}
- {{fileman(pages=3)}}
- {{fileman(1,2,3)}}';
+        {{ call (func,1,2,3) }} {{fileman()}} {{fileman(pages=3)}} {{fileman(1,2,3)}}';
         $pattern = '1230 1100 1300 1230';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern

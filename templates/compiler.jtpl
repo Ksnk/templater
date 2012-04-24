@@ -26,7 +26,7 @@ class tpl_{{name}} extends tpl_{{extends |default('base') }} {
 function __construct(){
 $this->macro=array();
 {% for m in macro %}
-$this->macro['{{m}}']=array($this,'_'.'{{m}}');
+$this->macro['{{m}}']=array($this,'_{{m}}');
 {% endfor %}
 {% for imp in import -%}
 ${{imp}}=new tpl_{{imp}}();
@@ -38,7 +38,7 @@ $this->macro=array_merge($this->macro,${{imp}}->macro);
 
 {% endfor %}
 }
-{% endblock %}
+{% endblock -%}
 
 ####################################################################
 ##  выполнение тега MACRO
@@ -71,11 +71,12 @@ $loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
 $loop{{loopdepth}}_cycle={{loop_cycle}};
 {% endif%}
 if (!empty($loop{{loopdepth}}_array)){
-foreach($loop{{loopdepth}}_array as {{index}}){
-{% if loop_index %}$loop{{loopdepth}}_index++;
+foreach($loop{{loopdepth}}_array as {{index}}
+{%if  index2 %} =>{{index2}} {% endif %}){
+
+{% if loop_index %}    $loop{{loopdepth}}_index++;
 {% endif%}
-{% if loop_revindex -%}
-$loop{{loopdepth}}_revindex--;
+{% if loop_revindex %}    $loop{{loopdepth}}_revindex--;
 {% endif %}
 {{body}}
 }}
@@ -94,7 +95,7 @@ else {
 {%- if x -%}
 $this->_{{x}}($par)
 {%- endif -%}
-{% endblock %}
+{% endblock -%}
 
 ####################################################################
 ## представление тега блок
@@ -104,26 +105,26 @@ $this->_{{x}}($par)
 {% if tag=='macros' %}
 function _{{name}}(&$namedpar
 {%- for p in param %},${{p.name}}{%if p.value%}={{p.value}}{% else %}=0{%endif%}{% endfor -%}){
-extract($namedpar);
+extract($namedpar);             {#- #}
 {% else %}
 function _{{name}}(&$par){
 {% endif %}
 {% endif %}
 {% for blk in data%}
 {%if blk.string  %}
+        {%set xxx=blk.string|join('
+    .') %}
 {% if loop.first and name %}
-$result={{ blk.string|join('
-    .') }};
-{% else %}
-$result.={{ blk.string|join('
-    .') }};
+$result={{ xxx }};
+{% elseif xxx!="''" %}
+$result.={{ xxx }};
 {% endif %}
 {% else %}
 {{ blk.data}};
 {%endif %}
 {%- endfor %}
 {% if name %}
-return $result;
+    return $result;
 }
 {% endif %}
 {%- endblock -%}

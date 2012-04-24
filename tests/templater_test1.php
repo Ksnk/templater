@@ -1,25 +1,37 @@
 <?php
-//require_once('/simpletest/autorun.php');
-    require_once('/simpletest/unit_tester.php');
-    require_once('/simpletest/shell_tester.php');
-    require_once('/simpletest/mock_objects.php');
-    require_once('/simpletest/reporter.php');
-    require_once('/simpletest/xml.php');
 
-// define path to include all useful files
-// windows only
+if (!defined('PHPUnit_MAIN_METHOD')) {
+    ini_set('include_path', ini_get('include_path') . PATH_SEPARATOR . dirname(dirname(__FILE__)));
+    require 'PHPUnit/Autoload.php';
+}
+
 ini_set('include_path',
-  ini_get('include_path')
-  .';../../nat2php;..' // windows only include!
+    ini_get('include_path')
+        . ';' . dirname(dirname(__FILE__)) . '\templates'
+        . ';' . dirname(dirname(dirname(__FILE__))) . '\nat2php;' // windows only include!
 );
+
 require_once('nat2php.class.php');
 require_once('compiler.class.php');
 require_once('template_parser.class.php');
 require_once('compiler.php.php');
 
-function pps(&$x,$default=''){return empty($x)?$default:$x;}
+function pps(&$x, $default = '')
+{
+    if (empty($x)) return $default; else return $x;
+}
 
-class Test_Templater extends UnitTestCase {
+class engine
+{
+    function export($class, $method, $par1 = null, $par2 = null, $par3 = null)
+    {
+        return sprintf('calling %s::%s(%s)', $class, $method, array_diff(array($par1, $par2, $par3), array(null)));
+    }
+}
+
+$GLOBALS['engine'] = new engine();
+
+class Test_Templater extends PHPUnit_Framework_TestCase {
 	
 	var $this_template='../templates/compiler.jtpl';
 
@@ -47,31 +59,22 @@ class Test_Templater extends UnitTestCase {
 		$compiler=$this->compile_it('test');
 		$compiler=$this->compile_it('test1');
 		$compiler1=$this->compile_it('test2');
-		if(!empty($_GET['compile'])){
+		//if(!empty($_GET['compile'])){
 			$s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
 			if(!empty($s)){
 		        echo 'xxx';
 		        file_put_contents ('../templates/tpl_compiler.php',$s);
 			}
-		}
-		$this->assertEqual(
+		//}
+		$this->assertEquals(
 			 str_replace('tpl_test1','tpl_test2',$compiler)
 			,$compiler1
 		);
 	}
 }
 
-	$test = &new TestSuite('testing how engine dealing with compiler.jtpl ');
-    $test->addTestCase(new Test_Templater());
-    if (isset($_GET['xml']) || in_array('xml', (isset($argv) ? $argv : array()))) {
-        $reporter = &new XmlReporter();
-    } elseif (TextReporter::inCli()) {
-        $reporter = &new TextReporter();
-    } else {
-        $reporter = &new HTMLReporter();
-    }
-    if (isset($_GET['dry']) || in_array('dry', (isset($argv) ? $argv : array()))) {
-        $reporter->makeDry();
-    }
-    exit ($test->run($reporter) ? 0 : 1);
+if (!defined('PHPUnit_MAIN_METHOD')) {
+    $suite = new PHPUnit_Framework_TestSuite('Test_Templater');
+    PHPUnit_TextUI_TestRunner::run($suite);
+}
 ?>

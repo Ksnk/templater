@@ -30,7 +30,7 @@ class php_compiler extends tpl_parser
         // однопараметровые фильтры
         // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
-            //->newOpR('loop', array($this, 'operand_loop'))
+        //->newOpR('loop', array($this, 'operand_loop'))
             ->newOpR('self', 'self', 'TYPE_XID')
             ->newOpR('_self', 'self', 'TYPE_XID')
             ->newOp1('now', 'date(%s)')
@@ -56,7 +56,8 @@ class php_compiler extends tpl_parser
             ->newFunc('finnumb', '$this->func_finnumb(%s)')
             ->newFunc('right', '$this->func_rights(%s)')
             ->newFunc('russuf', '$this->func_russuf(%s)')
-            ->newFunc('in_array', '$this->func_in_array(%s)');
+            ->newFunc('in_array', '$this->func_in_array(%s)')
+            ->newOp1('_echo_', array($this, '_echo_'));
 
     }
 
@@ -97,6 +98,7 @@ class php_compiler extends tpl_parser
         }
         ;
         if (!is_object($res)) return $res;
+
         foreach ($types as $type)
             switch ($type) {
                 /*
@@ -109,6 +111,9 @@ class php_compiler extends tpl_parser
                     $res->val = preg_replace("/^\s*/s", '', $res->val);
                     break;
                 case 'value':
+                    if ($res->type == 'TYPE_OBJECT') {
+                        return call_user_func( $res->handler, $res, '', 'value');
+                    }
                     return $res->val;
                 /*
                 * операции внешнего уровня
@@ -189,6 +194,10 @@ class php_compiler extends tpl_parser
                 case 'TYPE_OPERAND':
                 case 'TYPE_STRING':
                     if ($res->type == 'TYPE_ID') $this->to('I', $res);
+                    if ($res->type == 'TYPE_OBJECT') {
+                        $res->val= call_user_func( $res->handler, $res, '', 'value');
+                        $res->type='TYPE_OPERAND';
+                    }
                     if ($res->type == 'TYPE_LIST') {
                         $arr = array();
                         if (isset($res->value['keys'])) {
@@ -218,61 +227,9 @@ class php_compiler extends tpl_parser
         return $res;
     }
 
-    /**
-     * Описание хелпера loop для тега for
-     */
-    function operand_loop($op1 = null, $attr = null, $reson = 'attr')
+    function _echo_($op)
     {
-        // найти ближайший открытый for и отметить, что loop там используется.
-        if ($reson == 'call') {
-            // рекурсивный вызов цикла еще раз
-            if ($op1->val == 'loop')
-                $this->error('recursively loop not allowed a while');
-            else {
-                $t =& $this->opensent('for');
-                $t['loop_cycle'] = 'array(' . $this->to('S', $attr)->val . ')';
-                return null;
-            }
-//			$op= $this->oper('$loop','TYPE_OPERAND');
-//			return $op;
-        } else if (is_null($attr)) {
-            $op = $this->oper('loop', 'TYPE_OBJECT');
-            $op->handler = array($this, 'operand_loop');
-            return $op;
-        } else {
-            $t =& $this->opensent('for');
-            $t['loopdepth'] = $loopdepth = count($this->opensentence);
-            if ($attr == 'first') {
-                $t['loop_index'] = true;
-                return $this->oper('$loop' . $loopdepth . '_index==1', 'TYPE_OPERAND');
-            } elseif ($attr == 'last') {
-                $t['loop_index'] = true;
-                $t['loop_last'] = true;
-                return $this->oper('$loop' . $loopdepth . '_index==$loop' . $loopdepth . '_last', 'TYPE_OPERAND');
-            } elseif ($attr == 'cycle') {
-                $t['loop_cycle'] = true;
-                $op = $this->oper('$this->loopcycle($loop' . $loopdepth . '_cycle)', 'TYPE_OBJECT');
-                $op->handler = array($this, 'operand_loop');
-                return $op;
-            } elseif ($attr == 'index0') {
-                $t['loop_index'] = true;
-                return $this->oper('($loop' . $loopdepth . '_index-1)', 'TYPE_OPERAND');
-            } elseif ($attr == 'revindex') {
-                $t['loop_revindex'] = true;
-                $t['loop_last'] = true;
-                return $this->oper('$loop' . $loopdepth . '_revindex', 'TYPE_OPERAND');
-            } elseif ($attr == 'revindex0') {
-                $t['loop_revindex'] = true;
-                $t['loop_last'] = true;
-                return $this->oper('($loop' . $loopdepth . '_revindex-1)', 'TYPE_OPERAND');
-            } else {
-                $t['loop_' . $attr] = true;
-                if (in_array($attr, array('length', 'index'))) {
-                    return $this->oper('$loop' . $loopdepth . '_' . $attr, 'TYPE_OPERAND');
-                } else
-                    $this->error('undefined loop attribute-"' . $attr . '"!');
-            }
-        }
+        return $this->to('S',$op);
     }
 
     /**
