@@ -18,6 +18,7 @@ class php_compiler extends tpl_parser
             ->newOp2('* / %', 5)
             ->newOp2('//', 5, 'ceil(%s/%s)')
             ->newOp2('**', 7, 'pow(%s,%s)')
+            ->newOp2('..', 3, array($this, 'reprange'))
             ->newOp2('.', 12, array($this, 'function_point'))
             ->newOp2('|', 11, array($this, 'function_filter'))
             ->newOp2('is', 11, array($this, 'function_filter'), 11)
@@ -96,7 +97,6 @@ class php_compiler extends tpl_parser
         if (is_string($res)) {
             $res = $this->oper($res, 'TYPE_STRING');
         }
-        ;
         if (!is_object($res)) return $res;
 
         foreach ($types as $type)
@@ -112,7 +112,7 @@ class php_compiler extends tpl_parser
                     break;
                 case 'value':
                     if ($res->type == 'TYPE_OBJECT') {
-                        return call_user_func( $res->handler, $res, '', 'value');
+                        return call_user_func($res->handler, $res, '', 'value');
                     }
                     return $res->val;
                 /*
@@ -182,7 +182,12 @@ class php_compiler extends tpl_parser
                     if ($res->type == 'TYPE_LIST') {
                         $op = array();
                         for ($i = 0; $i < count($res->value['keys']); $i++) {
-                            $op[] = $this->to('*', $res->value['keys'][$i])->val;
+                            $x = '';
+                            if (!empty($res->value['value'][$i])) {
+                                $x .= $this->to('*', $res->value['value'][$i])->val . '=>';
+                            }
+                            $x .= $this->to('*', $res->value['keys'][$i])->val;
+                            $op[] = $x;
                         }
                         $res->val = implode(',', $op);
                         $res->type = 'TYPE_XLIST';
@@ -195,8 +200,8 @@ class php_compiler extends tpl_parser
                 case 'TYPE_STRING':
                     if ($res->type == 'TYPE_ID') $this->to('I', $res);
                     if ($res->type == 'TYPE_OBJECT') {
-                        $res->val= call_user_func( $res->handler, $res, '', 'value');
-                        $res->type='TYPE_OPERAND';
+                        $res->val = call_user_func($res->handler, $res, '', 'value');
+                        $res->type = 'TYPE_OPERAND';
                     }
                     if ($res->type == 'TYPE_LIST') {
                         $arr = array();
@@ -229,7 +234,7 @@ class php_compiler extends tpl_parser
 
     function _echo_($op)
     {
-        return $this->to('S',$op);
+        return $this->to('S', $op);
     }
 
     /**
@@ -245,5 +250,57 @@ class php_compiler extends tpl_parser
             . ')';
         $op1->type = "TYPE_OPERAND";
         return $op1;
+    }
+
+    function utford($c)
+    {
+        if (ord($c{0}) > 0xc0) {
+            $x = unpack('N', mb_convert_encoding($c, 'UCS-4BE', 'UTF-8'));
+            return $x[1];
+            /*           $x = 0;
+          $i = 0;
+          while (isset($c{$i})) {
+              $x += $x * 256 + ord($c{$i++});
+          }
+          return $x; */
+        } else
+            return ord($c{0});
+    }
+
+    function utfchr($i)
+    {
+        if ($i < 256) return chr($i);
+        /* $x = '';
+       while ($i > 0) {
+           $x .= chr($i % 256);//.$x;
+           $i=$i>>8;
+       } */
+        return mb_convert_encoding('&#' . $i . ';', 'UTF-8', 'HTML-ENTITIES');
+
+    }
+
+    function reprange($op1, $op2)
+    {
+        if ($op1->type == 'TYPE_DIGIT' && $op2->type == 'TYPE_DIGIT') {
+            $i = $op2->val;
+            $y = $op1->val;
+            $step = $i > $y ? -1 : 1;
+            for (; $i != $y; $i += $step) {
+                $this->pushOp($this->oper($i, 'TYPE_DIGIT'));
+            }
+            $this->pushOp($this->oper($i, 'TYPE_DIGIT'));
+            return false;
+        } elseif (($op1->type == 'TYPE_STRING' && $op2->type == 'TYPE_STRING') or ($op1->type == 'TYPE_STRING1' && $op2->type == 'TYPE_STRING1')) {
+            $i = $this->utford($op2->val);
+            $y = $this->utford($op1->val);
+            $step = $i > $y ? -1 : 1;
+            for (; $i != $y; $i += $step) {
+                $this->pushOp($this->oper($this->utfchr($i), 'TYPE_STRING'));
+            }
+            $this->pushOp($this->oper($this->utfchr($i), 'TYPE_STRING'));
+            return false;
+        } else {
+            return $this->oper('$this->func_reprange(%s,%s)', 'TYPE_LIST');
+        }
     }
 }

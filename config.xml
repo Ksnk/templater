@@ -4,8 +4,8 @@
     <files>
         <echo>
             <![CDATA[<%
-            $version="Templater engine (C) by Ksnk (sergekoriakin@gmail.com).\n     based on Jinja2 sintax";
-            $license="License MIT - Serge Koriakin - Jule 2010-2012";
+            $version="Templater engine v 2.0 (C) by Ksnk (sergekoriakin@gmail.com).\n     based on Twig sintax";
+            $license="License MIT - Serge Koriakin - 2012";
             // get the last tag from output
             $output=array();
             $tag = exec($git." describe --tags", $output);

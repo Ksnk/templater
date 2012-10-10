@@ -81,8 +81,8 @@ class tpl_parser extends nat_parser
                         $arr[] = $this->to('S', $op2->value['keys'][$i])->val;
                     } else {
                         $arrkeys[] = array(
-                            'key' => $op2->value['keys'][$i]->val,
-                            'value' => $this->to('S', $op2->value['value'][$i])->val
+                            'key' => $op2->value['value'][$i]->val,
+                            'value' => $this->to('S', $op2->value['keys'][$i])->val
                         );
                     }
                 }
@@ -273,7 +273,7 @@ class tpl_parser extends nat_parser
         while ($curptr < $total && preg_match($reg0, &$script, $m, 0, $curptr)) {
             if ($m[0] == '')
                 break; // что-то незаладилось в реге
-            $strcns.= $m[1];
+            $strcns .= $m[1];
             if (!empty($strcns)) {
                 if ($m[3] == '-') {
                     $strcns = preg_replace('/\s+$/s', '', $strcns);
@@ -292,7 +292,7 @@ class tpl_parser extends nat_parser
                     $this->lex[] = $this->oper('_echo_', 'TYPE_OPERATION', $curptr);
                     $this->lex[] = $this->oper($strcns, 'TYPE_STRING', $curptr);
                     $this->lex[] = $this->oper('', 'TYPE_COMMA', $curptr);
-                    $strcns='';
+                    $strcns = '';
                 }
             }
 
@@ -483,10 +483,10 @@ class tpl_parser extends nat_parser
             if (is_null($par['value'][$i])) {
                 $arr[] = array('name' => $this->to('TYPE_LITERAL', $par['keys'][$i])->val);
             } else {
-                $v = $this->to('S', $par['value'][$i])->val;
+                $v = $this->to('S', $par['keys'][$i])->val;
                 if (!$v) $v = '0 ';
                 $arr[] = array(
-                    'name' => $this->to('TYPE_LITERAL', $par['keys'][$i])->val,
+                    'name' => $this->to('TYPE_LITERAL', $par['value'][$i])->val,
                     'value' => $v
                 );
             }
@@ -618,8 +618,8 @@ class tpl_parser extends nat_parser
     {
         $set = array('tag' => 'set', 'operand' => count($this->operand));
         $this->getExpression(); // получили имя идентификатора
-        $set['id'] = $this->newId($this->popOp());
-        $set['id'] = $this->to(array('I', 'value'), $set['id']);
+        $set['id'] = $this->to(array('I', 'value'), $this->newId($this->popOp()));
+        //$set['id'] = $this->to(array('I', 'value'), $set['id']);
         $this->getNext();
         if ($this->op->val != '=')
             $this->error('unexpected construction9');
@@ -725,15 +725,23 @@ class tag_for
      */
     function operand_loop($op1 = null, $attr = null, $reson = 'attr')
     {
+        $_attr = $op1->attr;
+        $tag =& $this->tag;
+        $loopdepth = $tag['loopdepth'];
+        while (strpos($_attr, '.parent.loop') !== false) {
+            $_attr = substr($_attr, 12);
+            while ($loopdepth-- > 0 && $this->parcer->opensentence[$loopdepth]['tag'] != 'for') {
+            }
+            $tag = &$this->parcer->opensentence[$loopdepth];
+        }
         // найти ближайший открытый for и отметить, что loop там используется.
         if ($reson == 'call') {
             // рекурсивный вызов цикла еще раз
-            if ($op1->attr == '.cycle') {
-                $loopdepth = $this->tag['loopdepth'];
-                $this->tag['loop_cycle'] = 'array(' . $this->parcer->to('S', $attr)->val . ')';
+            if ($_attr == '.cycle') {
+                $tag['loop_cycle'] = 'array(' . $this->parcer->to('S', $attr)->val . ')';
                 return $this->parcer->oper('$this->loopcycle($loop' . $loopdepth . '_cycle)', 'TYPE_OPERAND');
             } else {
-                $this->parcer->error('calling not a callable construction');
+                $this->parcer->error('calling not a callable construction '.$_attr);
             }
         } else if (is_null($attr) || $attr instanceof tpl_parser) {
             $op = $this->parcer->oper('loop', 'TYPE_OBJECT');
@@ -752,16 +760,7 @@ class tag_for
                 $this->parcer->error('undefined loop attribute(1)-"' . $attr . '"!');
             }
         } else if ($reson == 'value') {
-            $attr = $op1->attr;
-            $tag =& $this->tag;
-            $loopdepth = $tag['loopdepth'];
-            while (strpos($attr, '.parent.loop') !== false) {
-                $attr = substr($attr, 12);
-                while ($loopdepth-- > 0 && $this->parcer->opensentence[$loopdepth]['tag'] != 'for') {
-                }
-                $tag = &$this->parcer->opensentence[$loopdepth];
-            }
-            switch ($attr) {
+            switch ($_attr) {
                 case '.first':
                     $tag['loop_index'] = true;
                     return '$loop' . $loopdepth . '_index==1';
@@ -786,9 +785,9 @@ class tag_for
                 case '.length':
                 case '.index':
                     $tag['loop_index'] = true;
-                    return '$loop' . $loopdepth . '_' . substr($attr, 1);
+                    return '$loop' . $loopdepth . '_' . substr($_attr, 1);
                 default :
-                    $this->parcer->error('undefined loop attribute-"' . $attr . '"!');
+                    $this->parcer->error('undefined loop attribute-"' . $_attr . '"!');
             }
         }
     }
@@ -830,8 +829,8 @@ class tag_for
             switch (strtolower($parcer->op->val)) {
                 case 'in':
                     $parcer->getExpression();
-                    $this->tag['in'] = $parcer->popOp();
-                    $this->tag['in'] = $parcer->to(array('I', 'value'), $this->tag['in']);
+                    // $this->tag['in'] = $parcer->popOp();
+                    $this->tag['in'] = $parcer->to(array('I', 'value'), $parcer->popOp());
                     break;
                 case 'if':
                     $parcer->getExpression();

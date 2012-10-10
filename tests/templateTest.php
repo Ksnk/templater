@@ -90,6 +90,23 @@ class templateTest extends PHPUnit_Framework_TestCase
           }*/
     }
 
+
+    function test_test16()
+    {
+        $data = array('data' => array());
+        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
+    <input type="{{ type }}" name="{{ name }}" value="{{
+        value|e }}" size="{{ size }}">
+{%- endmacro -%}
+<p>{{ input(\'username\') }}</p>
+<p>{{ input(\'password\', type=\'password\') }}</p>';
+        $pattern = '<p><input type="text" name="username" value="" size="20"></p>
+<p><input type="password" name="password" value="" size="20"></p>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
     function test_test13()
     {
         $data = array();
@@ -149,21 +166,6 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    function test_test16()
-    {
-        $data = array('data' => array());
-        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
-    <input type="{{ type }}" name="{{ name }}" value="{{
-        value|e }}" size="{{ size }}">
-{%- endmacro -%}
-<p>{{ input(\'username\') }}</p>
-<p>{{ input(\'password\', type=\'password\') }}</p>';
-        $pattern = '<p><input type="text" name="username" value="" size="20"></p>
-<p><input type="password" name="password" value="" size="20"></p>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
 
     function test_test1()
     {
@@ -220,17 +222,6 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /*
- function testLipsumError()
- {
-     $data = array('func' => 'fileman', 'data' => '<<<>>>');
-     $s = '{{ lipsum }}';
-     $pattern = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada ';
-     $this->assertEquals(
-         $this->_test_cmpl($s, $data), $pattern
-     );
- }
-    */
     /**
      * тестируем уже готовые шаблоны
      */

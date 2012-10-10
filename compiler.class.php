@@ -35,7 +35,7 @@ class template_compiler
         'TEMPLATE_EXTENSION' => 'jtpl'
     );
 
-    static public function options($options = '', $val = null)
+    static public function options($options = '', $val = null,$default='')
     {
         if (is_array($options))
             self::$opt = array_merge(self::$opt, $options);
@@ -43,6 +43,7 @@ class template_compiler
             self::$opt[$options] = $val;
         else if (isset(self::$opt[$options]))
             return self::$opt[$options];
+        else return $default;
     }
 
     static function do_prepare()
@@ -91,16 +92,18 @@ class template_compiler
             self::options('TEMPLATE_PATH', TEMPLATE_PATH);
             self::options('PHP_PATH', TEMPLATE_PATH);
         }
-        self::options('TEMPLATE_EXTENSION', 'jtpl');
+        $ext=self::options('TEMPLATE_EXTENSION',null, 'jtpl');
         if (!empty($options))
             self::options($options);
         $time = microtime(true);
-        $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . self::options('TEMPLATE_EXTENSION'));
+        $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
         $xtime = filemtime(__FILE__);
+        $include_dir=dirname(__FILE__) ;
+
         if (!empty($templates)) {
             foreach ($templates as $v) {
-                $name = basename($v, "." . self::options('TEMPLATE_EXTENSION'));
+                $name = basename($v, "." . $ext);
                 $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
                 //echo($phpn.' '.$v);
                 if (!file_exists($phpn)
@@ -109,9 +112,9 @@ class template_compiler
                 ) {
                     if (empty($include_done)) {
                         $include_done = true;
-                        require_once 'nat2php.class.php';
-                        require_once 'template_parser.class.php';
-                        require_once 'compiler.php.php';
+                        require_once $include_dir.'/nat2php.class.php';
+                        require_once $include_dir.'/template_parser.class.php';
+                        require_once $include_dir.'/compiler.php.php';
                     }
                     self::$filename = $v;
                     $x = self::compile_tpl(file_get_contents($v), $name);
@@ -120,8 +123,7 @@ class template_compiler
                 }
             }
         }
-        $time = microtime(true) - $time;
-        //echo $time.' sec spent';
+       // $time = microtime(true) - $time; echo $time.' sec spent';
     }
 
 }
