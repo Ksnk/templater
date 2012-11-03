@@ -218,7 +218,7 @@ class php_compiler extends tpl_parser
                         $res->type = 'TYPE_XSTRING';
                     }
                     if ($res->type == 'TYPE_STRING' || $res->type == 'TYPE_STRING1') {
-                        $res->val = "'" . addcslashes($res->val, "'") . "'";
+                        $res->val = "'" . addcslashes($res->val, "'\\") . "'";
                         $res->type = 'TYPE_XSTRING';
                     }
                     if ($res->type == 'TYPE_XID') {
