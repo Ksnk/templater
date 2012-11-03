@@ -651,7 +651,17 @@ class tpl_parser extends nat_parser
 
         $this->block_internal(array(), $tagx);
 
+
         array_pop($this->opensentence);
+        // TODO: разобраться с правильным наследованием _
+        // сейчас просто удаляем метод _ из отнаследованного шаблона
+        if(!empty($tag['extends'])){
+            for($x=0;$x< count($tag['data']); $x++){
+                if(preg_match('/function\s+_\s*\(/i',$tag['data'][$x]))
+                    break;
+            }
+            unset($tag['data'][$x]);
+        }
         return $this->template('class', $tag);
     }
 
@@ -694,7 +704,7 @@ class tpl_parser extends nat_parser
     function exec_tag($tag)
     {
         $name = 'tag_' . $tag;
-        if (class_exists($name)) {
+        if (class_exists($name,false)) {
             $tag = new $name();
             $tag->execute($this);
         } else if (method_exists($this, $name)) {

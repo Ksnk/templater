@@ -6,16 +6,8 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     require 'PHPUnit/Autoload.php';
 }
 
-ini_set('include_path',
-    ini_get('include_path')
-        . ';' . dirname(dirname(__FILE__)) . '\templates'
-        . ';' . dirname(dirname(dirname(__FILE__))) . '\nat2php;' // windows only include!
-);
+include_once 'header.inc.php';
 
-require_once('nat2php.class.php');
-require_once('compiler.class.php');
-require_once('template_parser.class.php');
-require_once('compiler.php.php');
 if (!function_exists('ps')) {
     function pps(&$x, $default = '')
     {
@@ -112,6 +104,45 @@ class twig_testTest extends PHPUnit_Framework_TestCase
             'pattern' => ' foo 1 2 foo:bar foo1:bar1'));
     }
 
+    function testMacro(){
+        $this->_test_tpl(array(
+                'index'=>'{%- macro ul_li(name,item) -%}
+
+<li{% if item.active %} class="active"{% endif %}><span class="_states treepoint"></span> <a href="{{item.url}}">{{name}}</a>
+    {%- if item.childs %}
+    <ul>
+        {%- for name1,item1 in item.childs %}
+        {{ ul_li(name1,item1) }}
+        {% endfor -%}
+    </ul>
+    {% endif -%}
+</li>
+{% endmacro -%}
+
+{{ul_li(name,ulli)}}',
+            'data' => array('name'=>'xxx','ulli'=>array('url'=>'xxx')),
+            'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
+    }
+    /*
+     *
+function testMacroError(){  // после первого endif пропущено %
+        $this->_test_tpl(array(
+                'index'=>'{% macro ul_li(name,item) -%}
+
+<li{% if item.active %} class="active"{% endif }><span class="_states treepoint"></span> <a href="{{item.url}}">{{name}}</a>
+    {%- if item.childs %}
+        <ul>
+         {{ul_li(item.childs)}}
+    </ul>
+    {% endif -%}
+</li>
+{% endmacro -%}
+
+{{ul_li(name,ulli)}}',
+            'data' => array('name'=>'xxx','ulli'=>array('url'=>'xxx')),
+            'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
+    }
+     */
     /* TODO: сообщение об ошибке, хочиццо
    public function testTwigExceptionAddsFileAndLineWhenMissing()
    {

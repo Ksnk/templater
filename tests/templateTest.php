@@ -5,16 +5,7 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     require 'PHPUnit/Autoload.php';
 }
 
-ini_set('include_path',
-    ini_get('include_path')
-        . ';' . dirname(dirname(__FILE__)) . '\templates'
-        . ';' . dirname(dirname(dirname(__FILE__))) . '\nat2php;' // windows only include!
-);
-
-require_once('nat2php.class.php');
-require_once('compiler.class.php');
-require_once('template_parser.class.php');
-require_once('compiler.php.php');
+include_once 'header.inc.php';
 
 function pps(&$x, $default = '')
 {

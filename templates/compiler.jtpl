@@ -13,15 +13,17 @@
  * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything, 
  * for your changes can be lost at any time.  
  */
+{# ## don't need includes any more
 {% if extends %}
 include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{extends}}.php';
 {% else %}
 include_once 'tpl_base.php';
 {% endif %}
+
 {% for imp in import -%}
 require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
 {% endfor %}
-
+#}
 class tpl_{{name}} extends tpl_{{extends |default('base') }} {
 function __construct(){
 $this->macro=array();

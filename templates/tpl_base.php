@@ -33,6 +33,7 @@ class tpl_base
         return $five;
 
     }
+
     /**
      * еще один вариант
      * выдать один из вариантов, в зависимости от параметра
@@ -168,11 +169,15 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      */
     public function callex($plugin = 'MAIN', $method = '_handle', $par1 = null, $par2 = null, $par3 = null)
     {
-        global $engine;
-        if (!empty($engine)) {
-            return $engine->export($plugin, $method, $par1, $par2, $par2);
+        if (class_exists('ENGINE'))
+            return ENGINE::exec(array($plugin, $method), array($par1, $par2, $par2));
+        else {
+            global $engine;
+            if (!empty($engine)) {
+                return $engine->export($plugin, $method, $par1, $par2, $par2);
+            }
+            return array();
         }
-        return array();
     }
 
     /**
@@ -180,11 +185,13 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * @param string $plugin
      * @param string $method
      */
-    public function call(&$par,$s)
+    public function call(&$par, $s)
     {
-        if(method_exists($this,'_'.$s)) {
-            $args=func_get_args(); array_splice($args,1,1);$args[0]=&$par;
-            return call_user_func_array(array($this,'_'.$s),$args);
+        if (method_exists($this, '_' . $s)) {
+            $args = func_get_args();
+            array_splice($args, 1, 1);
+            $args[0] =& $par;
+            return call_user_func_array(array($this, '_' . $s), $args);
         }
         return null;
     }
