@@ -131,10 +131,9 @@ class twig_testTest extends PHPUnit_Framework_TestCase
 
     function test2ndslice(){
         $this->_test_tpl(array(
-            'index'=>'!{{data[0].index}}',
-           // 'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
-            'data' => array(array('name'=>'xxx')),
-            'pattern' => '!xxx'));
+            'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
+            'data' => array('data'=>array(array('index'=>'xxx'))),
+            'pattern' => '!xxx +xxx'));
     }
     /*
      *
@@ -180,7 +179,7 @@ function testMacroError(){  // после первого endif пропущен�
      $this->_test_tpl(array(
          'data' => array('func' => 'fileman', 'data' => '<<<>>>'),
          'index' => '{{ lipsum() }}',
-     'startpattern' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada '),true);
+     'startpattern' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada '));
 
  }
 

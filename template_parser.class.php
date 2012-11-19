@@ -9,13 +9,16 @@
 %>
  */
 
-if (!defined('TEMPLATE_PATH')) define('TEMPLATE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'templates');
+//if (!defined('TEMPLATE_PATH')) define('TEMPLATE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'templates');
 
 class tpl_parser extends nat_parser
 {
+    // дополнительные константы типов
+    const
+        TYPE_SENTENSE = 101,
+        TYPE_LITERAL = 102
+;
     protected
-
-        // в них сопутствующей информации
 
         $locals = array(), // стек идентификаторов с областью видимости
         $ids_low = 0; // нижняя граница области видимости
@@ -41,7 +44,7 @@ class tpl_parser extends nat_parser
             'trim' => true,
             'COMPRESS_START_BLOCK' => true
         ));
-        $this->t_conv['E'] = 'TYPE_SENTENSE';
+        $this->t_conv['E'] = self::TYPE_SENTENSE;
         $this->error_msg['unexpected construction'] = 'something strange catched.';
     }
 
@@ -54,7 +57,7 @@ class tpl_parser extends nat_parser
     function function_callstack($op1, $op2)
     {
         //вырезка из массива
-        if ($op1->type == 'TYPE_OBJECT') {
+        if ($op1->type == self::TYPE_OBJECT) {
             $op1 = call_user_func($op1->handler, $op1, $op2, 'call');
             if ($op1)
                 $this->pushOp($op1);
@@ -67,12 +70,12 @@ class tpl_parser extends nat_parser
                     $this->pushOp($op);
             } elseif (is_string($x)) {
                 $op1->val = sprintf($x, $this->to('S', $op2)->val);
-                $op1->type = 'TYPE_OPERAND';
+                $op1->type = self::TYPE_OPERAND;
             } else
                 $this->error('wtf3!!!');
         } else {
             //вызов макрокоманды
-            if ($op2->type == 'TYPE_LIST') {
+            if ($op2->type == self::TYPE_LIST) {
                 // call macro
                 $arr = array();
                 $arrkeys = array();
@@ -87,7 +90,7 @@ class tpl_parser extends nat_parser
                     }
                 }
                 $op1->val = $this->template('callmacro', array('name' => $op1, 'param' => $arr, 'parkeys' => $arrkeys));
-                $op1->type = 'TYPE_SENTENSE';
+                $op1->type = self::TYPE_SENTENSE;
                 return $op1;
             } else
                 $this->error('have no function ' . $op1);
@@ -107,7 +110,7 @@ class tpl_parser extends nat_parser
         $data = array();
         $this->newop('(');
         do {
-            if ($this->getNext() == 'TYPE_EOF') {
+            if ($this->getNext() == self::TYPE_EOF) {
                 $this->back();
                 break;
             }
@@ -115,14 +118,13 @@ class tpl_parser extends nat_parser
                 $this->back();
                 break;
             }
-            if ($this->op->type == 'TYPE_COMMA' && empty($this->op->val)) {
+            if ($this->op->type == self::TYPE_COMMA && empty($this->op->val)) {
 
-            }
-            elseif ($this->exec_tag($this->op->val)) {
+            } elseif ($this->exec_tag($this->op->val)) {
                 $op = $this->popOp();
                 if (!empty($op)) {
                     $op = $this->to('S', $op);
-                    if ($op->type == 'TYPE_SENTENSE')
+                    if ($op->type == self::TYPE_SENTENSE)
                         $data[] = array('data' => $op->val);
                     else {
                         $data[] = array('string' => '(' . $op->val . ')');
@@ -137,9 +139,9 @@ class tpl_parser extends nat_parser
                } */
                 $op = $this->popOp();
                 $op = $this->to('S', $op);
-                if ($op->type == 'TYPE_SENTENSE')
+                if ($op->type == self::TYPE_SENTENSE)
                     $data[] = array('data' => $op->val);
-                else if ($op->type == 'TYPE_XSTRING') {
+                else if ($op->type == self::TYPE_XSTRING) {
                     if (!empty($op->val))
                         $data[] = array('string' => $op->val);
                 } else {
@@ -191,9 +193,9 @@ class tpl_parser extends nat_parser
         if (!empty($tag['name'])) {
             $t =& $this->opensent('class');
             $t['data'][] = $this->template('block', $tag);
-            $this->pushOp($this->oper($this->template('callblock', $tag), 'TYPE_OPERAND'));
+            $this->pushOp($this->oper($this->template('callblock', $tag), self::TYPE_OPERAND));
         } else
-            $this->pushOp($this->oper($this->template('block', $tag), 'TYPE_SENTENSE'));
+            $this->pushOp($this->oper($this->template('block', $tag), self::TYPE_SENTENSE));
     }
 
     /**
@@ -216,13 +218,13 @@ class tpl_parser extends nat_parser
          * массив типов, определенных регуляркой. Повязан на суб-номер в регулярке
          */
         $types = array(0 //0 - just skip
-        , 0, 'TYPE_STRING'
-        , 'TYPE_DIGIT'
-        , 'TYPE_COMMA'
-        , 'TYPE_OPERATION' //5
-        , 'TYPE_ID' //6  TYPE_OPERAND
-        , 'TYPE_OPERATION' //7
-        , 'TYPE_COMMA' //8
+        , 0, self::TYPE_STRING
+        , self::TYPE_DIGIT
+        , self::TYPE_COMMA
+        , self::TYPE_OPERATION //5
+        , self::TYPE_ID //6  TYPE_OPERAND
+        , self::TYPE_OPERATION //7
+        , self::TYPE_COMMA //8
         );
         return '#[\n\r\s]*' // # - пропуск пробелов
             . '(?:' #1#2 - заквоченные без слеша на конце - TYPE_OPERAND
@@ -289,9 +291,9 @@ class tpl_parser extends nat_parser
 
             if ($m[1] !== '') {
                 if ($m[2] != $this->options['COMMENT_LINE'] && $m[2] != $this->options['COMMENT_START']) {
-                    $this->lex[] = $this->oper('_echo_', 'TYPE_OPERATION', $curptr);
-                    $this->lex[] = $this->oper($strcns, 'TYPE_STRING', $curptr);
-                    $this->lex[] = $this->oper('', 'TYPE_COMMA', $curptr);
+                    $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $curptr);
+                    $this->lex[] = $this->oper($strcns, self::TYPE_STRING, $curptr);
+                    $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
                     $strcns = '';
                 }
             }
@@ -313,8 +315,8 @@ class tpl_parser extends nat_parser
                 }
             } else {
                 if ($m[2] != $this->options['BLOCK_START']) {
-                    $this->lex[] = $this->oper('_echo_', 'TYPE_OPERATION', $curptr);
-                    //   $this->lex[] = $this->oper('(', 'TYPE_COMMA', $curptr);
+                    $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $curptr);
+                    //   $this->lex[] = $this->oper('(', self::TYPE_COMMA, $curptr);
                 }
             }
 
@@ -324,25 +326,25 @@ class tpl_parser extends nat_parser
                 $pos = $curptr;
                 $curptr += strlen($m[0]);
                 if (!empty($m[1])) {
-                    $op = $this->oper(stripslashes($m[2]), 'TYPE_STRING', $pos);
+                    $op = $this->oper(stripslashes($m[2]), self::TYPE_STRING, $pos);
                     if ($m[1] == "'")
-                        $op->type .= '1';
+                        $op->type = self::TYPE_STRING1;
                     elseif ($m[1] == "`")
-                        $op->type .= '2';
+                        $op->type = self::TYPE_STRING2;
 
                     $this->lex[] = $op;
                 } else {
                     for ($x = count($types) - 1; $x > 2; $x--) {
                         if (isset($m[$x]) && $m[$x] != "") {
-                            if ($types[$x] == 'TYPE_COMMA' && strlen($m[$x]) > 1) {
+                            if ($types[$x] == self::TYPE_COMMA && strlen($m[$x]) > 1) {
                                 if ($m[$x]{0} == '-') {
                                     $triml = true;
                                     $m[$x] = substr($m[$x], 1);
                                 }
                                 if ($m[$x] == $this->options['VARIABLE_END']) {
-                                    // $this->lex[] = $this->oper(')', 'TYPE_COMMA', $curptr);
+                                    // $this->lex[] = $this->oper(')', self::TYPE_COMMA, $curptr);
                                 }
-                                $this->lex[] = $this->oper('', 'TYPE_COMMA', $curptr);
+                                $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
                                 break 2;
                             }
                             $op = $this->oper(strtolower($m[$x]), $types[$x], $pos);
@@ -365,10 +367,9 @@ class tpl_parser extends nat_parser
                                 $curptr += strlen($m[0]);
                                 array_pop($this->lex);
                                 array_pop($this->lex);
-                                $this->lex[] = $this->oper($m[1], 'TYPE_STRING', $curptr);
+                                $this->lex[] = $this->oper($m[1], self::TYPE_STRING, $curptr);
                                 break 2;
-                            }
-                            else
+                            } else
                                 break;
                         }
                     }
@@ -376,7 +377,7 @@ class tpl_parser extends nat_parser
                 $first = false;
             }
         }
-        $this->lex[] = $this->oper("\x1b", 'TYPE_EOF', $curptr);
+        $this->lex[] = $this->oper("\x1b", self::TYPE_EOF, $curptr);
     }
 
     function newId($op)
@@ -409,25 +410,16 @@ class tpl_parser extends nat_parser
     function function_point($op1, $op2)
     {
         //вырезка из массива
-        if ($op1->type == 'TYPE_XID' && $op1->val == 'self') {
-            // print_r($op1);  print_r($op2);
-            $op2->type = 'TYPE_XID';
+        if ($op1->type == self::TYPE_XID && $op1->val == 'self') {
+            // игнорируем self как вредный  элемент
+            $op2->type = self::TYPE_XID;
             return $op2;
         }
-        if ($op1->type == 'TYPE_OBJECT') {
+        if ($op1->type == self::TYPE_OBJECT) {
+            // вызов.
             return call_user_func($op1->handler, $op1, $op2, 'attr');
         }
-        $this->to('I', $op1);
-        if ($op2->type == 'TYPE_ID') $op2->type = 'TYPE_STRING';
-        $this->to('S', $op2);
-        //print_r($op2);
-        if (!empty($op2->orig))
-            $op1->val .= '["' . $op2->orig . '"]';
-        else
-            $op1->val .= '[' . $op2->val . ']';
-        // $op1->val .= '["' . pps($op2->orig, $op2->val) . '"]';
-        $op1->type = 'TYPE_XID';
-        return $op1;
+        return $this->function_scratch($op1,$op2);
     }
 
     /**
@@ -472,7 +464,7 @@ class tpl_parser extends nat_parser
         $tag = array('tag' => 'macros', 'operand' => count($this->operand), 'data' => array());
         $this->getNext(); // name of macros
         // зарегистрировать как функцию
-        $tag['name'] = $this->to('TYPE_LITERAL', $this->op)->val;
+        $tag['name'] = $this->to(self::TYPE_LITERAL, $this->op)->val;
         $this->getNext(); // name of macros
         if ($this->op->val != '(') {
             $this->error('expected macro parameters');
@@ -481,12 +473,12 @@ class tpl_parser extends nat_parser
         $arr = array();
         for ($i = 0, $max = count($par['value']); $i < $max; $i++) {
             if (is_null($par['value'][$i])) {
-                $arr[] = array('name' => $this->to('TYPE_LITERAL', $par['keys'][$i])->val);
+                $arr[] = array('name' => $this->to(self::TYPE_LITERAL, $par['keys'][$i])->val);
             } else {
                 $v = $this->to('S', $par['keys'][$i])->val;
                 if (!$v) $v = '0 ';
                 $arr[] = array(
-                    'name' => $this->to('TYPE_LITERAL', $par['value'][$i])->val,
+                    'name' => $this->to(self::TYPE_LITERAL, $par['value'][$i])->val,
                     'value' => $v
                 );
             }
@@ -530,7 +522,7 @@ class tpl_parser extends nat_parser
         $this->getNext();
         $this->block_internal(array('endblock'), $tag);
         $this->getNext();
-        if ($this->op->type != 'TYPE_COMMA')
+        if ($this->op->type != self::TYPE_COMMA)
             $this->getNext();
     }
 
@@ -575,7 +567,7 @@ class tpl_parser extends nat_parser
             // $this->getNext(); // выдали таг
             $this->block_internal(array('elseif', 'elif', 'else', 'endif'));
             $op = $this->popOp();
-            $data['then'] = $this->to(array('TYPE_SENTENSE', 'value'), $op);
+            $data['then'] = $this->to(array(self::TYPE_SENTENSE, 'value'), $op);
             $tag['data'][] = $data;
             $this->getNext(); // выдали таг
             if ($this->op->val == 'endif')
@@ -586,7 +578,7 @@ class tpl_parser extends nat_parser
                 $op = $this->popOp();
                 $data = array(
                     'if' => false,
-                    'then' => $this->to(array('TYPE_SENTENSE', 'value'), $op)
+                    'then' => $this->to(array(self::TYPE_SENTENSE, 'value'), $op)
                 );
                 $tag['data'][] = $data;
                 $this->getNext(); // выдали таг
@@ -594,7 +586,7 @@ class tpl_parser extends nat_parser
             }
         } while (true);
         // $this->getNext(); // съели символ, закрывающий тег
-        $this->pushOp($this->oper($this->template('if', $tag), 'TYPE_SENTENSE'));
+        $this->pushOp($this->oper($this->template('if', $tag), self::TYPE_SENTENSE));
         return;
     }
 
@@ -618,7 +610,7 @@ class tpl_parser extends nat_parser
     {
         $set = array('tag' => 'set', 'operand' => count($this->operand));
         $this->getExpression(); // получили имя идентификатора
-        $id= $this->newId($this->popOp());
+        $id = $this->newId($this->popOp());
         $set['id'] = $this->to(array('I', 'value'), $id);
         //$set['id'] = $this->to(array('I', 'value'), $set['id']);
         $this->getNext();
@@ -626,12 +618,12 @@ class tpl_parser extends nat_parser
             $this->error('unexpected construction9');
         $this->getExpression();
         $set['res'] = $this->popOp();
-        if ($set['res']->type == 'TYPE_LIST')
-            $set['res'] = $this->to('TYPE_XLIST', $set['res'])->val;
+        if ($set['res']->type == self::TYPE_LIST)
+            $set['res'] = $this->to(self::TYPE_XLIST, $set['res'])->val;
         else
             $set['res'] = $this->to('*', $set['res'])->val;
         // $this->getNext();
-        $this->pushOp($this->oper($this->template('set', $set), 'TYPE_SENTENSE'));
+        $this->pushOp($this->oper($this->template('set', $set), self::TYPE_SENTENSE));
         return;
     }
 
@@ -656,9 +648,9 @@ class tpl_parser extends nat_parser
         array_pop($this->opensentence);
         // TODO: разобраться с правильным наследованием _
         // сейчас просто удаляем метод _ из отнаследованного шаблона
-        if(!empty($tag['extends'])){
-            for($x=0;$x< count($tag['data']); $x++){
-                if(preg_match('/function\s+_\s*\(/i',$tag['data'][$x]))
+        if (!empty($tag['extends'])) {
+            for ($x = 0; $x < count($tag['data']); $x++) {
+                if (preg_match('/function\s+_\s*\(/i', $tag['data'][$x]))
                     break;
             }
             unset($tag['data'][$x]);
@@ -706,7 +698,7 @@ class tpl_parser extends nat_parser
     function exec_tag($tag)
     {
         $name = 'tag_' . $tag;
-        if (class_exists($name,false)) {
+        if (class_exists($name, false)) {
             $tag = new $name();
             $tag->execute($this);
         } else if (method_exists($this, $name)) {
@@ -737,7 +729,7 @@ class tag_for
      */
     function operand_loop($op1 = null, $attr = null, $reson = 'attr')
     {
-        $_attr = property_exists ($op1,'attr')?$op1->attr:'';
+        $_attr = property_exists($op1, 'attr') ? $op1->attr : '';
         $tag =& $this->tag;
         $loopdepth = $tag['loopdepth'];
         while (strpos($_attr, '.parent.loop') !== false) {
@@ -751,12 +743,12 @@ class tag_for
             // рекурсивный вызов цикла еще раз
             if ($_attr == '.cycle') {
                 $tag['loop_cycle'] = 'array(' . $this->parcer->to('S', $attr)->val . ')';
-                return $this->parcer->oper('$this->loopcycle($loop' . $loopdepth . '_cycle)', 'TYPE_OPERAND');
+                return $this->parcer->oper('$this->loopcycle($loop' . $loopdepth . '_cycle)', tpl_parser::TYPE_OPERAND);
             } else {
-                $this->parcer->error('calling not a callable construction '.$_attr);
+                $this->parcer->error('calling not a callable construction ' . $_attr);
             }
         } else if (is_null($attr) || $attr instanceof tpl_parser) {
-            $op = $this->parcer->oper('loop', 'TYPE_OBJECT');
+            $op = $this->parcer->oper('loop', tpl_parser::TYPE_OBJECT);
             $op->attr = '';
             $op->handler = array($this, 'operand_loop');
             return $op;
@@ -820,43 +812,43 @@ class tag_for
         );
         $parcer->opensentence[] = &$this->tag;
         $parcer->getExpression(); // получили имя идентификатора
-        $id=$parcer->newId($parcer->popOp());
+        $id = $parcer->newId($parcer->popOp());
         $this->tag['index'] = $parcer->to(array('I', 'value'), $id);
         //
         if ($parcer->op->val == ',') { // key-value pair selected
             $parcer->getNext();
             $parcer->getExpression();
-            $id=$parcer->newId($parcer->popOp());
+            $id = $parcer->newId($parcer->popOp());
             $this->tag['index2'] = $parcer->to(array('I', 'value'), $id);
         }
 
         $this->parcer = $parcer;
- /*       $op = $parcer->oper('loop', 'TYPE_OBJECT');
+ /*       $op = $parcer->oper('loop', self::TYPE_OBJECT);
         $op->handler = array($this, 'operand_loop');
         $parcer->newOpr('loop', $op);  */
 
         $parcer->newOpr('loop', array($this, 'operand_loop'));
 
-        //$parcer->newId($parcer->oper('loop', 'TYPE_ID'));
+        //$parcer->newId($parcer->oper('loop', self::TYPE_ID));
         do {
             $parcer->getNext();
             switch (strtolower($parcer->op->val)) {
                 case 'in':
                     $parcer->getExpression();
                     // $this->tag['in'] = $parcer->popOp();
-                    $id=$parcer->popOp();
+                    $id = $parcer->popOp();
                     $this->tag['in'] = $parcer->to(array('I', 'value'), $id);
                     break;
                 case 'if':
                     $parcer->getExpression();
-                    $id=$parcer->popOp();
+                    $id = $parcer->popOp();
                     $this->tag['if'] = $parcer->to(array('*', 'value'), $id);
                     break;
                 case 'recursive':
                     $this->tag['recursive'] = true;
                     break;
                 default:
-                    if ($parcer->op->type == 'TYPE_COMMA')
+                    if ($parcer->op->type == tpl_parser::TYPE_COMMA)
                         break 2;
                     else
                         $parcer->error('unexpected construction1');
@@ -870,18 +862,18 @@ class tag_for
             $parcer->getNext();
             $op = $parcer->popOp();
             if ($parcer->op->val == 'else') {
-                $this->tag['body'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                $this->tag['body'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
                 $this->tag['else'] = true;
                 // $parcer->getNext(); // съели символ, закрывающий тег
             } elseif ($parcer->op->val == 'endfor') {
                 $parcer->getNext(); // съели символ, закрывающий тег
                 if ($this->tag['else']) {
-                    $this->tag['else'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                    $this->tag['else'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
                 } else {
-                    $this->tag['body'] = $parcer->to(array('TYPE_SENTENSE', 'value'), $op);
+                    $this->tag['body'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
                 }
                 // генерируем все это добро
-                $parcer->pushOp($parcer->oper($parcer->template('for', $this->tag), 'TYPE_SENTENSE'));
+                $parcer->pushOp($parcer->oper($parcer->template('for', $this->tag), tpl_parser::TYPE_SENTENSE));
                 do {
                     $op = array_pop($parcer->opensentence);
                     if ($op['tag'] == 'for') break;

@@ -48,6 +48,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 
         if ($show) echo $result . "\n\n";
         //error_log($result."\n\n",3,'log.log');
+        //echo $result;
         eval ('?>' . $result);
         $t = 'tpl_test' . $classnumber;
         $t = new $t();
@@ -653,11 +654,11 @@ class templateTest extends PHPUnit_Framework_TestCase
 
     function test_test24()
     {
-        $data = array('user' => array('right' => array('*' => 1027)), 'right' => array('1' => 1027));
+        $data = array('user' => array('right' => array('*' => 1027)), 'right' => array(1 => 1027));
         $s = '{%if not user.right["*"] %}1{%endif-%}
 {%if not right["*"] %}2{%endif-%}
 {%if not right[1] %}3{%endif%}';
-        $pattern = '12';
+        $pattern = '2';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -674,7 +675,7 @@ class templateTest extends PHPUnit_Framework_TestCase
             )));
         $s = file_get_contents(dirname(__FILE__) . '/quick.form.tpl');
 
-        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial,sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="f" class="element"><span class="required">* </span> f </label> <div class="element error"><span class="error">f<br/></span> f </div> </div> <div class="row"> <label for=" " class="element"><span class="required">* </span> </label> <div class="element error"><span class="error"> <br/></span> </div> </div> <div class="row"> <label for="H" class="element"><span class="required">* </span> H </label> <div class="element error"><span class="error">H<br/></span> H </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
+        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial,sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
         $this->assertEquals(
             $this->compress($this->_test_cmpl($s, $data)), $pattern
         );

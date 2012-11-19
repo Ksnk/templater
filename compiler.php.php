@@ -35,8 +35,8 @@ class php_compiler extends tpl_parser
         // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
         //->newOpR('loop', array($this, 'operand_loop'))
-            ->newOpR('self', 'self', 'TYPE_XID')
-            ->newOpR('_self', 'self', 'TYPE_XID')
+            ->newOpR('self', 'self', self::TYPE_XID)
+            ->newOpR('_self', 'self', self::TYPE_XID)
             ->newOp1('now', 'date(%s)')
         // фильтры и тесты
             ->newFunc('e', 'htmlspecialchars(%s)', 'SS')
@@ -99,7 +99,7 @@ class php_compiler extends tpl_parser
         //конвертер операнда в то или иное состояние
         if (!is_array($types)) $types = array($types);
         if (is_string($res)) {
-            $res = $this->oper($res, 'TYPE_STRING');
+            $res = $this->oper($res, self::TYPE_STRING);
         }
         if (!is_object($res)) return $res;
 
@@ -115,26 +115,26 @@ class php_compiler extends tpl_parser
                     $res->val = preg_replace("/^\s*/s", '', $res->val);
                     break;
                 case 'value':
-                    if ($res->type == 'TYPE_OBJECT') {
+                    if ($res->type == self::TYPE_OBJECT) {
                         return call_user_func($res->handler, $res, '', 'value');
                     }
                     return $res->val;
                 /*
                 * операции внешнего уровня
                 */
-                case 'TYPE_SENTENSE':
-                    if ($res->type == 'TYPE_SENTENSE') break;
+                case self::TYPE_SENTENSE:
+                    if ($res->type == self::TYPE_SENTENSE) break;
                     $this->to('*', $res);
                     if ($res->val == "''") $res->val = '';
                     else
                         $res->val = '$result.=' . $res->val . ';'; //TODO: завязка на порождаемый язык
-                    $res->type = 'TYPE_SENTENSE';
+                    $res->type = self::TYPE_SENTENSE;
                     break;
                 /*
                 * просто литерал
                 */
-                case 'TYPE_LITERAL':
-                    if ($res->type == 'TYPE_ID' || $res->type == 'TYPE_STRING2') {
+                case self::TYPE_LITERAL:
+                    if ($res->type == self::TYPE_ID || $res->type == self::TYPE_STRING2) {
                     } else {
                         $this->error('plain literal expected');
                     }
@@ -143,47 +143,65 @@ class php_compiler extends tpl_parser
                 * преобразования
                 */
                 case 'I':
-                case 'TYPE_XID':
-                    if ($res->type == 'TYPE_ID' || $res->type == 'TYPE_STRING2') {
+                case self::TYPE_XID:
+                    if ($res->type == self::TYPE_ID || $res->type == self::TYPE_STRING2) {
                         if ($this->checkId($res->val)) {
                             $res->val = '$' . $res->val;
-                            $res->type = 'TYPE_OPERAND';
+                            $res->type = self::TYPE_OPERAND;
                         } else {
                             $res->val = '$par[\'' . $res->val . '\']';
-                            $res->type = 'TYPE_XID';
+                            $res->type = self::TYPE_XID;
                         }
                         ;
-                    } elseif ($res->type == 'TYPE_LIST') {
-                        $this->to('TYPE_XLIST', $res);
-                    } /*elseif ($res->type!='TYPE_XID'){
+                    } elseif ($res->type == self::TYPE_SLICE) {
+                        if(!empty($res->list)){
+                            $this->to('I',$res->list[0]);
+                            $res->val =$res->list[0]->val;
+                            $condition=sprintf('is_array(%s)',$res->list[0]->val);
+
+                            array_shift($res->list);
+                            foreach($res->list as  $el){
+                                if($el->type==self::TYPE_ID){
+                                    $el->type=self::TYPE_STRING ;// вырезка через точку - это вырезка через индекс
+                                }
+                                $this->to('S',$el);
+                                $condition.=sprintf(' && array_key_exists(%s,%s)',$el->val,$res->val);
+                                $res->val.='['.$el->val.']';
+                            }
+                            $res->val='('.$condition.'?'.$res->val.':"")';
+                            unset($res->list);
+                        }
+                        $res->type = self::TYPE_XSTRING;
+                    } elseif ($res->type == self::TYPE_LIST) {
+                        $this->to(self::TYPE_XLIST, $res);
+                    } /*elseif ($res->type!=self::TYPE_XID){
 	    		$this->error('waiting for ID')	;
 	    	}*/
                     ;
                     break;
-
-                case 'TYPE_XLIST':
+                case self::TYPE_XLIST:
                     $this->to('L', $res);
                     $res->val = 'array(' . $res->val . ')';
-                    $res->type = 'TYPE_XID';
+                    $res->type = self::TYPE_XID;
                     break;
 
                 case 'B':
-                case 'TYPE_XBOOLEAN':
-                    if ($res->type == 'TYPE_ID' || $res->type == 'TYPE_STRING2') {
+                case self::TYPE_XBOOLEAN:
+                    if ($res->type == self::TYPE_ID || $res->type == self::TYPE_STRING2) {
                         $this->to('I', $res);
-                    } elseif ($res->type == 'TYPE_STRING') {
+                    } elseif ($res->type == self::TYPE_STRING) {
                         $this->to('S', $res);
                     }
-                    if ($res->type == 'TYPE_XID') {
+                    if ($res->type == self::TYPE_XID) {
                         $res->val = '(isset(' . $res->val . ') && !empty(' . $res->val . '))';
                         break;
-                    } elseif ($res->type == 'TYPE_XSTRING') {
+                    } elseif ($res->type == self::TYPE_XSTRING) {
                         $res->val = '!empty(' . $res->val . '))';
                         break;
                     }
                 // продолжаем то, что ниже!!!!!!!!!
                 case 'L':
-                    if ($res->type == 'TYPE_LIST') {
+                    if ($res->type == self::TYPE_LIST) {
                         $op = array();
                         for ($i = 0; $i < count($res->value['keys']); $i++) {
                             $x = '';
@@ -194,20 +212,21 @@ class php_compiler extends tpl_parser
                             $op[] = $x;
                         }
                         $res->val = implode(',', $op);
-                        $res->type = 'TYPE_XLIST';
+                        $res->type = self::TYPE_XLIST;
                     }
                 // break не нeнужен !!!
                 case '*':
                 case 'S':
                 case 'D':
-                case 'TYPE_OPERAND':
-                case 'TYPE_STRING':
-                    if ($res->type == 'TYPE_ID') $this->to('I', $res);
-                    if ($res->type == 'TYPE_OBJECT') {
+                case self::TYPE_OPERAND:
+                case self::TYPE_STRING:
+                    if ($res->type == self::TYPE_ID) $this->to('I', $res);
+                    if ($res->type == self::TYPE_OBJECT) {
                         $res->val = call_user_func($res->handler, $res, '', 'value');
-                        $res->type = 'TYPE_OPERAND';
+                        $res->type = self::TYPE_OPERAND;
                     }
-                    if ($res->type == 'TYPE_LIST') {
+                    if ($res->type == self::TYPE_SLICE) $this->to('I', $res);
+                    if ($res->type == self::TYPE_LIST) {
                         $arr = array();
                         if (isset($res->value['keys'])) {
                             for ($i = 0; $i < count($res->value['keys']); $i++) {
@@ -219,15 +238,15 @@ class php_compiler extends tpl_parser
                             }
                         }
                         $res->val = implode(',', $arr);
-                        $res->type = 'TYPE_XSTRING';
+                        $res->type = self::TYPE_XSTRING;
                     }
-                    if ($res->type == 'TYPE_STRING' || $res->type == 'TYPE_STRING1') {
+                    if ($res->type == self::TYPE_STRING || $res->type == self::TYPE_STRING1) {
                         $res->val = "'" . addcslashes($res->val, "'\\") . "'";
-                        $res->type = 'TYPE_XSTRING';
+                        $res->type = self::TYPE_XSTRING;
                     }
-                    if ($res->type == 'TYPE_XID') {
+                    if ($res->type == self::TYPE_XID) {
                         $res->val = '(isset(' . $res->val . ')?' . $res->val . ':"")';
-                        $res->type = 'TYPE_XSTRING';
+                        $res->type = self::TYPE_XSTRING;
                     }
                     //
 
@@ -285,26 +304,26 @@ class php_compiler extends tpl_parser
 
     function reprange($op1, $op2)
     {
-        if ($op1->type == 'TYPE_DIGIT' && $op2->type == 'TYPE_DIGIT') {
+        if ($op1->type == self::TYPE_DIGIT && $op2->type == self::TYPE_DIGIT) {
             $i = $op2->val;
             $y = $op1->val;
             $step = $i > $y ? -1 : 1;
             for (; $i != $y; $i += $step) {
-                $this->pushOp($this->oper($i, 'TYPE_DIGIT'));
+                $this->pushOp($this->oper($i, self::TYPE_DIGIT));
             }
-            $this->pushOp($this->oper($i, 'TYPE_DIGIT'));
+            $this->pushOp($this->oper($i, self::TYPE_DIGIT));
             return false;
-        } elseif (($op1->type == 'TYPE_STRING' && $op2->type == 'TYPE_STRING') or ($op1->type == 'TYPE_STRING1' && $op2->type == 'TYPE_STRING1')) {
+        } elseif (($op1->type == self::TYPE_STRING && $op2->type == self::TYPE_STRING) or ($op1->type == self::TYPE_STRING1 && $op2->type == self::TYPE_STRING1)) {
             $i = $this->utford($op2->val);
             $y = $this->utford($op1->val);
             $step = $i > $y ? -1 : 1;
             for (; $i != $y; $i += $step) {
-                $this->pushOp($this->oper($this->utfchr($i), 'TYPE_STRING'));
+                $this->pushOp($this->oper($this->utfchr($i), self::TYPE_STRING));
             }
-            $this->pushOp($this->oper($this->utfchr($i), 'TYPE_STRING'));
+            $this->pushOp($this->oper($this->utfchr($i), self::TYPE_STRING));
             return false;
         } else {
-            return $this->oper('$this->func_reprange(%s,%s)', 'TYPE_LIST');
+            return $this->oper('$this->func_reprange(%s,%s)', self::TYPE_LIST);
         }
     }
 }
