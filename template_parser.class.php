@@ -618,7 +618,8 @@ class tpl_parser extends nat_parser
     {
         $set = array('tag' => 'set', 'operand' => count($this->operand));
         $this->getExpression(); // получили имя идентификатора
-        $set['id'] = $this->to(array('I', 'value'), $this->newId($this->popOp()));
+        $id= $this->newId($this->popOp());
+        $set['id'] = $this->to(array('I', 'value'), $id);
         //$set['id'] = $this->to(array('I', 'value'), $set['id']);
         $this->getNext();
         if ($this->op->val != '=')
@@ -700,6 +701,7 @@ class tpl_parser extends nat_parser
      * - список классов-расширений
      * - список собственных методов
      * @param string $tag
+     * @return bool
      */
     function exec_tag($tag)
     {
@@ -735,7 +737,7 @@ class tag_for
      */
     function operand_loop($op1 = null, $attr = null, $reson = 'attr')
     {
-        $_attr = $op1->attr;
+        $_attr = property_exists ($op1,'attr')?$op1->attr:'';
         $tag =& $this->tag;
         $loopdepth = $tag['loopdepth'];
         while (strpos($_attr, '.parent.loop') !== false) {
@@ -818,12 +820,14 @@ class tag_for
         );
         $parcer->opensentence[] = &$this->tag;
         $parcer->getExpression(); // получили имя идентификатора
-        $this->tag['index'] = $parcer->to(array('I', 'value'), $parcer->newId($parcer->popOp()));
+        $id=$parcer->newId($parcer->popOp());
+        $this->tag['index'] = $parcer->to(array('I', 'value'), $id);
         //
         if ($parcer->op->val == ',') { // key-value pair selected
             $parcer->getNext();
             $parcer->getExpression();
-            $this->tag['index2'] = $parcer->to(array('I', 'value'), $parcer->newId($parcer->popOp()));
+            $id=$parcer->newId($parcer->popOp());
+            $this->tag['index2'] = $parcer->to(array('I', 'value'), $id);
         }
 
         $this->parcer = $parcer;
@@ -840,11 +844,13 @@ class tag_for
                 case 'in':
                     $parcer->getExpression();
                     // $this->tag['in'] = $parcer->popOp();
-                    $this->tag['in'] = $parcer->to(array('I', 'value'), $parcer->popOp());
+                    $id=$parcer->popOp();
+                    $this->tag['in'] = $parcer->to(array('I', 'value'), $id);
                     break;
                 case 'if':
                     $parcer->getExpression();
-                    $this->tag['if'] = $parcer->to(array('*', 'value'), $parcer->popOp());
+                    $id=$parcer->popOp();
+                    $this->tag['if'] = $parcer->to(array('*', 'value'), $id);
                     break;
                 case 'recursive':
                     $this->tag['recursive'] = true;

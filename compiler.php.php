@@ -10,6 +10,9 @@
  */
 class php_compiler extends tpl_parser
 {
+
+    static $filename='';
+
     function __construct($options = array())
     {
         parent::__construct();
@@ -78,7 +81,8 @@ class php_compiler extends tpl_parser
                 $line = $v;
             }
 
-            $mess .= sprintf("\n" . 'line:%s, pos:%s lex:"%s"'
+            $mess .= sprintf("\n" . 'file: %s<br>line:%s, pos:%s lex:"%s"'
+                , self::$filename
                 , $line + 1, pps($lex->pos, -1) - $lexpos, pps($lex->val, -1));
         }
         throw new Exception($mess);

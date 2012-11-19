@@ -116,7 +116,7 @@ class template_compiler
                         require_once $include_dir.'/template_parser.class.php';
                         require_once $include_dir.'/compiler.php.php';
                     }
-                    self::$filename = $v;
+                    php_compiler::$filename = $v;
                     $x = self::compile_tpl(file_get_contents($v), $name);
                     if (!!$x)
                         file_put_contents($phpn, $x);

@@ -44,7 +44,12 @@ class twig_testTest extends PHPUnit_Framework_TestCase
         $t = 'tpl_test' . $classnumber;
         $t = new $t();
         $d=array(); if(isset($data['data'])) $d=$data['data'];
-        $this->assertEquals( $t->_($d), $data['pattern']);
+        if(isset($data['startpattern'])){
+            $x=$t->_($d);
+            $this->assertEquals( substr($x,0,strlen($data['startpattern'])), $data['startpattern']);
+        } else {
+            $this->assertEquals( $t->_($d), $data['pattern']);
+        }
     }
 
     function test_5()
@@ -106,7 +111,7 @@ class twig_testTest extends PHPUnit_Framework_TestCase
 
     function testMacro(){
         $this->_test_tpl(array(
-                'index'=>'{%- macro ul_li(name,item) -%}
+            'index'=>'{%- macro ul_li(name,item) -%}
 
 <li{% if item.active %} class="active"{% endif %}><span class="_states treepoint"></span> <a href="{{item.url}}">{{name}}</a>
     {%- if item.childs %}
@@ -122,6 +127,14 @@ class twig_testTest extends PHPUnit_Framework_TestCase
 {{ul_li(name,ulli)}}',
             'data' => array('name'=>'xxx','ulli'=>array('url'=>'xxx')),
             'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
+    }
+
+    function test2ndslice(){
+        $this->_test_tpl(array(
+            'index'=>'!{{data[0].index}}',
+           // 'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
+            'data' => array(array('name'=>'xxx')),
+            'pattern' => '!xxx'));
     }
     /*
      *
@@ -161,16 +174,16 @@ function testMacroError(){  // после первого endif пропущен�
            $this->assertEquals('index', $e->getTemplateFile());
        }
    } */
-     /* TODO: сообщение об ошибке, хочиццо
+
  function testLipsumError()
  {
      $this->_test_tpl(array(
          'data' => array('func' => 'fileman', 'data' => '<<<>>>'),
-         'index' => '{{ lipsum }}',
-     'pattern' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada '),true);
+         'index' => '{{ lipsum() }}',
+     'startpattern' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada '),true);
 
  }
-   */
+
 }
 
 if (!defined('PHPUnit_MAIN_METHOD')) {
