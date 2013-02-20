@@ -1,12 +1,11 @@
 <?php
 /**
- * this file is created automatically at "02 Nov 2012 23:48". Never change anything, 
- * for your changes can be lost at any time.  
- */
-
+ * this file is created automatically at "21 Feb 2013 0:13". Never change anything, 
+ * for your changes can be lost at any time. 
+ */ 
 class tpl_compiler extends tpl_base {
 function __construct(){
-$this->macro=array();
+parent::__construct();
 }
 
 function _class(&$par){
@@ -15,18 +14,17 @@ $result='<?php
  * this file is created automatically at "'
     .(date('d M Y G:i'))
     .'". Never change anything, 
- * for your changes can be lost at any time.  
- */
-
+ * for your changes can be lost at any time. 
+ */ 
 class tpl_'
     .(isset($par['name'])?$par['name']:"")
     .' extends tpl_'
     .($this->filter_default((isset($par['extends'])?$par['extends']:""),'base'))
     .' {
 function __construct(){
-$this->macro=array();';
+parent::__construct();';
 $loop1_array=ps($par['macro']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $m){
 
 $result.='
@@ -37,7 +35,7 @@ $this->macro[\''
     .'\');';
 }};
 $loop1_array=ps($par['import']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $imp){
 
 $result.='$'
@@ -52,7 +50,7 @@ $this->macro=array_merge($this->macro,$'
 $result.='
 }';
 $loop1_array=ps($par['data']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $func){
 
 $result.='
@@ -72,13 +70,13 @@ $result.=call_user_func($this->macro[\''
     .(isset($par['name'])?$par['name']:"")
     .'\'],array(';
 $loop1_array=ps($par['parkeys']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $p){
 
 $result.='\''
-    .(isset($p["key"])?$p["key"]:"")
+    .$this->func_bk($p,'key')
     .'\'=>'
-    .(isset($p["value"])?$p["value"]:"")
+    .$this->func_bk($p,'value')
     .',';
 }};
 $result.=')';
@@ -88,6 +86,20 @@ $result.=','
     .($this->filter_join((isset($par['param'])?$par['param']:""),', '));
 };
 $result.=')';
+    return $result;
+}
+
+function _callmacroex(&$par){
+$result='if(is_object( '
+    .(isset($par['par1'])?$par['par1']:"")
+    .' ))
+    $result.='
+    .(isset($par['par1'])?$par['par1']:"")
+    .'->'
+    .(isset($par['mm'])?$par['mm']:"")
+    .'( '
+    .($this->filter_join((isset($par['param'])?$par['param']:""),', '))
+    .' )';
     return $result;
 }
 
@@ -135,7 +147,9 @@ $result.='$loop'
     .';';
 };
 $result.='
-if (!empty($loop'
+if (is_array($loop'
+    .(isset($par['loopdepth'])?$par['loopdepth']:"")
+    .'_array) && !empty($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array)){
 foreach($loop'
@@ -200,15 +214,15 @@ function _'
     .(isset($par['name'])?$par['name']:"")
     .'(&$namedpar';
 $loop1_array=ps($par['param']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $p){
 
 $result.=',$'
-    .(isset($p["name"])?$p["name"]:"");
-if( (isset($p["value"]) && !empty($p["value"])) ) {
+    .$this->func_bk($p,'name');
+if( $this->func_bk($p,'value') ) {
 
 $result.='='
-    .(isset($p["value"])?$p["value"]:"");
+    .$this->func_bk($p,'value');
 }
 else {
 
@@ -227,12 +241,12 @@ function _'
 };
 };
 $loop1_array=ps($par['data']);$loop1_index=0;
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $blk){    $loop1_index++;
 
-if( (isset($blk["string"]) && !empty($blk["string"])) ) {
+if( $this->func_bk($blk,'string') ) {
 
-$xxx=$this->filter_join((isset($blk["string"])?$blk["string"]:""),'
+$xxx=$this->filter_join($this->func_bk($blk,'string'),'
     .');
 if( ($loop1_index==1) && ((isset($par['name']) && !empty($par['name']))) ) {
 
@@ -253,7 +267,7 @@ else {
 
 $result.='
 '
-    .(isset($blk["data"])?$blk["data"]:"")
+    .$this->func_bk($blk,'data')
     .';';
 };
 }};
@@ -271,27 +285,27 @@ $result='';
 $if_index=1;
 $if_last=count((isset($par['data'])?$par['data']:""));
 $loop1_array=ps($par['data']);
-if (!empty($loop1_array)){
+if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $d){
 
 if( ($if_index)==(1) ) {
 
 $result.='if( '
-    .(isset($d["if"])?$d["if"]:"")
+    .$this->func_bk($d,'if')
     .' ) {
 '
-    .(isset($d["then"])?$d["then"]:"")
+    .$this->func_bk($d,'then')
     .'
 }';
 }
-elseif( ((isset($d["if"]) && !empty($d["if"]))) || (($if_index)!=($if_last)) ) {
+elseif( ($this->func_bk($d,'if')) || (($if_index)!=($if_last)) ) {
 
 $result.='
 elseif( '
-    .(isset($d["if"])?$d["if"]:"")
+    .$this->func_bk($d,'if')
     .' ) {
 '
-    .(isset($d["then"])?$d["then"]:"")
+    .$this->func_bk($d,'then')
     .'
 }';
 }
@@ -300,7 +314,7 @@ else {
 $result.='
 else {
 '
-    .(isset($d["then"])?$d["then"]:"")
+    .$this->func_bk($d,'then')
     .'
 }';
 };
@@ -312,6 +326,7 @@ $if_index=($if_index)+(1);
 function _ (&$par){
 $result=($this->_class($par))
     .($this->_callmacro($par))
+    .($this->_callmacroex($par))
     .($this->_set($par))
     .($this->_for($par))
     .($this->_callblock($par))

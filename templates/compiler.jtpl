@@ -26,7 +26,7 @@ require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
 #}
 class tpl_{{name}} extends tpl_{{extends |default('base') }} {
 function __construct(){
-$this->macro=array();
+parent::__construct();
 {% for m in macro %}
 $this->macro['{{m}}']=array($this,'_{{m}}');
 {% endfor %}
@@ -48,6 +48,13 @@ $this->macro=array_merge($this->macro,${{imp}}->macro);
 {%- block callmacro -%}
 if(!empty($this->macro['{{name}}']))
 $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p.key}}'=>{{p.value}},{%endfor%}){%if param%},{{param|join(', ')}}{% endif %})
+{%- endblock -%}
+####################################################################
+##  выполнение тега MACRO
+##
+{%- block callmacroex -%}
+if(is_object( {{par1}} ))
+    $result.={{par1}}->{{mm}}( {{ param|join(', ') }} )
 {%- endblock -%}
 
 ####################################################################
@@ -72,7 +79,7 @@ $loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
 {% if loop_cycle -%}
 $loop{{loopdepth}}_cycle={{loop_cycle}};
 {% endif%}
-if (!empty($loop{{loopdepth}}_array)){
+if (is_array($loop{{loopdepth}}_array) && !empty($loop{{loopdepth}}_array)){
 foreach($loop{{loopdepth}}_array as {{index}}
 {%if  index2 %} =>{{index2}} {% endif %}){
 

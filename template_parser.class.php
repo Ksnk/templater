@@ -46,6 +46,7 @@ class tpl_parser extends nat_parser
         ));
         $this->t_conv['E'] = self::TYPE_SENTENSE;
         $this->error_msg['unexpected construction'] = 'something strange catched.';
+
     }
 
     /**
@@ -89,7 +90,13 @@ class tpl_parser extends nat_parser
                         );
                     }
                 }
-                $op1->val = $this->template('callmacro', array('name' => $op1, 'param' => $arr, 'parkeys' => $arrkeys));
+                if($op1->type==self::TYPE_SLICE){
+                    // вызов объектного макроса
+                    $this->to('I',$op1->list[0]);
+                    //$op1->val =$op1->list[0]->val;
+                    $op1->val = $this->template('callmacroex', array('par1' => $op1->list[0]->val,'mm'=>$op1->list[1]->val, 'param' => $arr));
+                }  else
+                    $op1->val = $this->template('callmacro', array('name' => $op1, 'param' => $arr, 'parkeys' => $arrkeys));
                 $op1->type = self::TYPE_SENTENSE;
                 return $op1;
             } else
@@ -137,7 +144,7 @@ class tpl_parser extends nat_parser
                 /* if ($this->op->val != '') {
                    $this->error('unexpected construction2');
                } */
-                $op = $this->popOp();
+                if(!($op = $this->popOp())) break;
                 $op = $this->to('S', $op);
                 if ($op->type == self::TYPE_SENTENSE)
                     $data[] = array('data' => $op->val);
@@ -295,6 +302,8 @@ class tpl_parser extends nat_parser
                     $this->lex[] = $this->oper($strcns, self::TYPE_STRING, $curptr);
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
                     $strcns = '';
+                } else {
+                    $strcns=preg_replace('/\s\s+$/m'," ",$strcns);
                 }
             }
 
@@ -444,7 +453,7 @@ class tpl_parser extends nat_parser
      * @example
      * // вызов макрокоманды
      * if(!empty($this->macros[macroname]))
-     * cal_user_func($this->macros[macroname],$namedpar,$par1,$par2,...);
+     * call_user_func($this->macros[macroname],$namedpar,$par1,$par2,...);
      *
      * неопределенные функции автоматически становятся макрами! Регистрировать не надо
      *

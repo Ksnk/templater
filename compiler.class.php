@@ -88,6 +88,9 @@ class template_compiler
     static function checktpl($options = '')
     {
         static $include_done;
+        if(!class_exists('tpl_base'))
+            include_once (template_compiler::options('templates_dir') . 'tpl_base.php');
+
         if (defined('TEMPLATE_PATH')) {
             self::options('TEMPLATE_PATH', TEMPLATE_PATH);
             self::options('PHP_PATH', TEMPLATE_PATH);
@@ -95,7 +98,7 @@ class template_compiler
         $ext=self::options('TEMPLATE_EXTENSION',null, 'jtpl');
         if (!empty($options))
             self::options($options);
-        $time = microtime(true);
+        //$time = microtime(true);
         $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
         $xtime = filemtime(__FILE__);

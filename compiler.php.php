@@ -157,7 +157,7 @@ class php_compiler extends tpl_parser
                         if(!empty($res->list)){
                             $this->to('I',$res->list[0]);
                             $res->val =$res->list[0]->val;
-                            $condition=sprintf('is_array(%s)',$res->list[0]->val);
+                            $condition=sprintf('$this->func_bk(%s',$res->list[0]->val);
 
                             array_shift($res->list);
                             foreach($res->list as  $el){
@@ -165,10 +165,9 @@ class php_compiler extends tpl_parser
                                     $el->type=self::TYPE_STRING ;// вырезка через точку - это вырезка через индекс
                                 }
                                 $this->to('S',$el);
-                                $condition.=sprintf(' && array_key_exists(%s,%s)',$el->val,$res->val);
-                                $res->val.='['.$el->val.']';
+                                $condition.=sprintf(',%s',$el->val);
                             }
-                            $res->val='('.$condition.'?'.$res->val.':"")';
+                            $res->val=$condition.')';
                             unset($res->list);
                         }
                         $res->type = self::TYPE_XSTRING;

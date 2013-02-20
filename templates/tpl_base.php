@@ -9,6 +9,10 @@
  */
 class tpl_base
 {
+
+    function __construct(){
+        $this->macro=array();
+    }
     /**
      * дополнить русские числительные
      * @param mixed $n
@@ -32,6 +36,21 @@ class tpl_base
             return $two;
         return $five;
 
+    }
+
+    /**
+     * еще один вариант
+     * выдать один из вариантов, в зависимости от параметра
+     * {{ number }} огур{{ number | rusuf('ец|ца|цов')}}
+     * @param $n
+     * @param string $search
+     * @param string $replace
+     * @internal param string $suf
+     * @return array
+     */
+    function func_replace($n, $search='',$replace='')
+    {
+        return str_replace($$search,$replace,$n);
     }
 
     /**
@@ -94,6 +113,10 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     function func_date($s, $format = "d m Y")
     {
+        if(function_exists('toRusDate')){
+           // debug($s);
+            return toRusDate($s, $format);
+        }
         return date($format, strtotime($s));
     }
 
@@ -171,11 +194,11 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
     public function callex($plugin = 'MAIN', $method = '_handle', $par1 = null, $par2 = null, $par3 = null)
     {
         if (class_exists('ENGINE'))
-            return ENGINE::exec(array($plugin, $method), array($par1, $par2, $par2));
+            return ENGINE::exec(array($plugin, $method), array($par1, $par2, $par3));
         else {
             global $engine;
             if (!empty($engine)) {
-                return $engine->export($plugin, $method, $par1, $par2, $par2);
+                return $engine->export($plugin, $method, $par1, $par2, $par3);
             }
             return array();
         }
@@ -260,4 +283,22 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         array_push($loop_array, $s);
         return $s;
     }
+
+    /**
+     * вырезка из элемента. Для сокращения слов в шаблоне
+     */
+    function func_bk(&$el)
+    {
+        $x=func_get_args();
+        array_shift($x);
+        $result=&$el;
+        foreach ($x as $idx){
+            if (is_array($result) && array_key_exists($idx,$result)) $result=&$result[$idx];
+            elseif (is_object($result)) $result=&$result->$idx ;
+            else return '';
+        }
+        return $result;
+    }
+
+
 }

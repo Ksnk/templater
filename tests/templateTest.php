@@ -18,6 +18,10 @@ class engine
     {
         return sprintf('calling %s::%s(%s)', $class, $method, array_diff(array($par1, $par2, $par3), array(null)));
     }
+
+    function test($a,$b,$c){
+        return $a.'+'.$b.'+'.$c;
+    }
 }
 
 $GLOBALS['engine'] = new engine();
@@ -82,6 +86,17 @@ class templateTest extends PHPUnit_Framework_TestCase
           }*/
     }
 
+    function testCallObject()
+    {
+        $data = array('main' => $GLOBALS['engine'], 'data' => '<<<>>>');
+        $s = '
+        {{ main.test (1,2,3) }} ';
+        $pattern = '
+        1+2+3 ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data,true), $pattern
+        );
+    }
 
     function test_test16()
     {
@@ -223,7 +238,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         $data = array('user' => array('username' => '111')); //,array('username'=>'one'),array('username'=>'two')));
         $s = 'hello {{ user.username }}!';
         $this->assertEquals(
-            $this->_test_tpl($s, $data),
+            $this->_test_cmpl($s, $data),
             'hello 111!'
         );
     }
@@ -243,7 +258,7 @@ class templateTest extends PHPUnit_Framework_TestCase
   <li>two</li>
 </ul>';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -262,7 +277,7 @@ class templateTest extends PHPUnit_Framework_TestCase
   <li>two</li>
 </ul>';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -278,7 +293,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         $pattern = '<h1>Members</h1>
    <ul><li>one</li><li>two</li></ul>';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -322,7 +337,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 </body>
 </html>';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -335,7 +350,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = '123456789';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -352,7 +367,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = '123456789';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -365,10 +380,10 @@ class templateTest extends PHPUnit_Framework_TestCase
 
         $pattern = ' xxx ';
         $this->assertEquals(
-            $this->_test_tpl($s1, $data), $pattern
+            $this->_test_cmpl($s1, $data), $pattern
         );
         $this->assertEquals(
-            $this->_test_tpl($s2, $data), $pattern
+            $this->_test_cmpl($s2, $data), $pattern
         );
     }
 
@@ -385,7 +400,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = 'on\\e\'s one"s ';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -400,7 +415,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = 'nothing';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -694,6 +709,30 @@ class templateTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     *  2 ошибки.
+     * поставить = вместо ==
+     * закомментировать endif
+     */
+
+    function testAbsentEndif()
+    {
+        $data = array('func' => 'fileman', 'data' => '<<<>>>');
+        $s = "<div class='body'>
+{% for elem in data %}
+{% if elem.type=='text' %}
+{% elseif elem.type=='foto' %}
+{% else %}
+       unsupported type <br>
+    {% endif %}
+    {% endfor %}
+</div> ";
+        $pattern = '<div class=\'body\'>
+</div> ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
 }
 
 if (!defined('PHPUnit_MAIN_METHOD')) {

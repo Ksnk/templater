@@ -5,16 +5,8 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
     require 'PHPUnit/Autoload.php';
 }
 
-ini_set('include_path',
-    ini_get('include_path')
-        . ';' . dirname(dirname(__FILE__)) . '\templates'
-        . ';' . dirname(dirname(dirname(__FILE__))) . '\nat2php;' // windows only include!
-);
+include_once 'header.inc.php';
 
-require_once('nat2php.class.php');
-require_once('compiler.class.php');
-require_once('template_parser.class.php');
-require_once('compiler.php.php');
 
 function pps(&$x, $default = '')
 {
@@ -62,7 +54,7 @@ class Test_Templater extends PHPUnit_Framework_TestCase {
 		//if(!empty($_GET['compile'])){
 			$s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
 			if(!empty($s)){
-		        echo 'xxx';
+		        echo 'xxx!';
 		        file_put_contents ('../templates/tpl_compiler.php',$s);
 			}
 		//}
