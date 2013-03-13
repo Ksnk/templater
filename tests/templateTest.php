@@ -26,6 +26,20 @@ class engine
 
 $GLOBALS['engine'] = new engine();
 
+class tpl_test extends tpl_base{
+
+    function __construct(){
+
+    }
+    function _($par=0){
+        return $this->_test($par).' Calling parent_ method';
+    }
+
+    function _test(){
+        return 'Calling parent test! Ok! ';
+    }
+}
+
 class templateTest extends PHPUnit_Framework_TestCase
 {
 
@@ -37,11 +51,12 @@ class templateTest extends PHPUnit_Framework_TestCase
     /**
      * тестирование шаблона с генерацией нового класса
      */
-    function _test_cmpl($tpl, $data, $show = false)
+    function _test_cmpl($tpl, $data, $show = false,$macro='_')
     {
         static $classnumber = 10;
         $classnumber++;
         $calc = new php_compiler();
+        //list($tpl,$macro,$rest)=explode('|',$tpl.'|_|',3);
         $calc->makelex($tpl);
 
 //        foreach($calc->lex as $v) echo $v->val.'
@@ -56,7 +71,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         eval ('?>' . $result);
         $t = 'tpl_test' . $classnumber;
         $t = new $t();
-        return $t->_($data);
+        return $t->$macro($data);
         /*		} catch(Exception $e) {
               print_r($e->getMessage());echo'</pre>';
               return 'XXX';
@@ -86,6 +101,71 @@ class templateTest extends PHPUnit_Framework_TestCase
           }*/
     }
 
+    /** test extends-parent  */
+    function test_test27()
+    {
+        $s = '##
+##   Генерация страничной адресации
+##
+{% macro paging(pages)%}
+{% if pages -%}
+<div class="paging">
+        {%- set maxnumb= (pages.total) // pages.perpage
+           set start = pages.page-3
+           if start>0 -%}
+            <a href="{{pages.url}}page=prev">&lt;&lt;</a>&nbsp;
+        {%- endif -%}
+
+        {%- for xpage in range(7,1) -%} {% set page=start+xpage -%}
+        {% if page>0 and page <= maxnumb -%}
+        {% if page == pages.page -%}
+        <span>{{page}}</span>&nbsp;
+        {%- else -%}
+        <a href="{{pages.url}}page={{page}}">{{page}}</a>&nbsp;
+        {%-  endif endif  endfor -%}
+        {%- if page < maxnumb -%}
+            <a href="{{pages.url}}?page=next">&gt;&gt;</a>&nbsp;
+        {%- endif -%}
+        {%- if pages.total%}<span>Всего: {{pages.total}}</span>{% endif -%}
+        </div>
+{% endif -%}
+{% endmacro -%}';
+        $pattern = '<div class="paging"><a href="http:xxx.com/xxx?page=prev">&lt;&lt;</a>&nbsp;<a href="http:xxx.com/xxx?page=2">2</a>&nbsp;<a href="http:xxx.com/xxx?page=3">3</a>&nbsp;<a href="http:xxx.com/xxx?page=4">4</a>&nbsp;<span>5</span>&nbsp;<a href="http:xxx.com/xxx?page=6">6</a>&nbsp;<a href="http:xxx.com/xxx?page=7">7</a>&nbsp;<a href="http:xxx.com/xxx?page=8">8</a>&nbsp;<a href="http:xxx.com/xxx??page=next">&gt;&gt;</a>&nbsp;<span>Всего: 144</span></div>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, array('pages'=>array(
+                'total'=>144,
+                'perpage'=>15,
+                'url'=>"http:xxx.com/xxx?",
+                'page'=>5,
+            )),true,'_paging'), $pattern
+        );
+    }
+
+
+    /** test extends-parent  */
+    function test_test26()
+    {
+        $data = array('data' => '<<<>>>');
+        $s = '
+{% extends "test.php"%}
+{% block test %} <table>
+	{% for x in [1,2] %}
+	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
+	one</td><td>two</td></tr>
+	{% endfor %}
+	</table> {{parent()}}{% endblock %}
+	{{test()}} ';
+        $pattern = ' <table>
+	<tr class="odd"><td>1</td><td>
+	one</td><td>two</td></tr>
+	<tr class="even"><td>2</td><td>
+	one</td><td>two</td></tr>
+	</table> Calling parent test! Ok! ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data,false,'_test'), $pattern
+        );
+    }
+
     function testCallObject()
     {
         $data = array('main' => $GLOBALS['engine'], 'data' => '<<<>>>');
@@ -94,7 +174,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         $pattern = '
         1+2+3 ';
         $this->assertEquals(
-            $this->_test_cmpl($s, $data,true), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -733,6 +813,7 @@ class templateTest extends PHPUnit_Framework_TestCase
             $this->_test_cmpl($s, $data), $pattern
         );
     }
+
 }
 
 if (!defined('PHPUnit_MAIN_METHOD')) {

@@ -26,8 +26,8 @@ class php_compiler extends tpl_parser
             ->newOp2('|', 11, array($this, 'function_filter'))
             ->newOp2('is', 11, array($this, 'function_filter'), 11)
             ->newOp2('== != > >= < <=', 2, null, 'B**')
-            ->newOp2('and', 3, '(%s) && (%s)', 'BBB')
-            ->newOp2('or', 3, '(%s) || (%s)', 'BBB')
+            ->newOp2('and', 1, '(%s) && (%s)', 'BBB')
+            ->newOp2('or', 1, '(%s) || (%s)', 'BBB')
             ->newOp2('~', 2, '(%s).(%s)', 'SSS')
             ->newOp1('not', '!(%s)', 'BB')
             ->newOp2('& << >>', 3)
@@ -45,6 +45,9 @@ class php_compiler extends tpl_parser
             ->newFunc('replace', array($this, 'function_replace'), 'SSSS')
             ->newFunc('length', 'count(%s)', 'DI')
             ->newFunc('lipsum', '$this->func_lipsum(%s)')
+            ->newFunc('min')
+            ->newFunc('max')
+            ->newFunc('trim')
             ->newFunc('join', '$this->filter_join(%s)')
             ->newFunc('default', '$this->filter_default(%s)')
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
@@ -61,6 +64,8 @@ class php_compiler extends tpl_parser
             ->newFunc('right', '$this->func_rights(%s)')
             ->newFunc('russuf', '$this->func_russuf(%s)')
             ->newFunc('in_array', '$this->func_in_array(%s)')
+           // ->newFunc('parent', 'parent::_styles(%s)')
+            ->newFunc('parent', array($this, 'function_parent'))
             ->newOp1('_echo_', array($this, '_echo_'));
 
     }
@@ -270,6 +275,22 @@ class php_compiler extends tpl_parser
             . ',' . $this->to('S', $op2->value['keys'][2])->val
             . ',' . $this->to('S', $op2->value['keys'][0])->val
             . ')';
+        $op1->type = "TYPE_OPERAND";
+        return $op1;
+    }
+
+    /**
+     * фильтр - replace
+     * @param operand $op1 - TYPE_ID - имя функции
+     * @param operand $op2 - TYPE_LIST - параметры функции
+     */
+    function function_parent($op1,$op2)
+    {
+        $value=array();
+        foreach($op2->value['keys'] as &$v){
+            $value[]=$this->to('S', $v)->val ;
+        }
+        $op1->val = 'parent::_'.$this->currentFunction.'('.implode(',',$value).')' ;
         $op1->type = "TYPE_OPERAND";
         return $op1;
     }

@@ -53,8 +53,7 @@ $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p
 ##  выполнение тега MACRO
 ##
 {%- block callmacroex -%}
-if(is_object( {{par1}} ))
-    $result.={{par1}}->{{mm}}( {{ param|join(', ') }} )
+{{par1}}->{{mm}}( {{ param|join(', ') }} )
 {%- endblock -%}
 
 ####################################################################

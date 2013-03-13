@@ -1,6 +1,6 @@
 <?php
 /**
- * this file is created automatically at "21 Feb 2013 0:13". Never change anything, 
+ * this file is created automatically at "21 Feb 2013 0:39". Never change anything, 
  * for your changes can be lost at any time. 
  */ 
 class tpl_compiler extends tpl_base {
@@ -90,11 +90,7 @@ $result.=')';
 }
 
 function _callmacroex(&$par){
-$result='if(is_object( '
-    .(isset($par['par1'])?$par['par1']:"")
-    .' ))
-    $result.='
-    .(isset($par['par1'])?$par['par1']:"")
+$result=(isset($par['par1'])?$par['par1']:"")
     .'->'
     .(isset($par['mm'])?$par['mm']:"")
     .'( '

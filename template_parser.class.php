@@ -24,6 +24,8 @@ class tpl_parser extends nat_parser
         $ids_low = 0; // нижняя граница области видимости
 
     public
+        $currentFunction= '', // имя текущей функции block или macro
+        //для корректной работы parent()
         $opensentence = array(), // комплект открытых тегов, для портирования
         /** @var string - скрипт для выполнения */
         $script,
@@ -95,9 +97,11 @@ class tpl_parser extends nat_parser
                     $this->to('I',$op1->list[0]);
                     //$op1->val =$op1->list[0]->val;
                     $op1->val = $this->template('callmacroex', array('par1' => $op1->list[0]->val,'mm'=>$op1->list[1]->val, 'param' => $arr));
-                }  else
+                    $op1->type = self::TYPE_OPERAND ;
+                }  else {
                     $op1->val = $this->template('callmacro', array('name' => $op1, 'param' => $arr, 'parkeys' => $arrkeys));
-                $op1->type = self::TYPE_SENTENSE;
+                    $op1->type = self::TYPE_SENTENSE;
+                }
                 return $op1;
             } else
                 $this->error('have no function ' . $op1);
@@ -474,6 +478,7 @@ class tpl_parser extends nat_parser
         $this->getNext(); // name of macros
         // зарегистрировать как функцию
         $tag['name'] = $this->to(self::TYPE_LITERAL, $this->op)->val;
+        $this->currentFunction=$tag['name'];
         $this->getNext(); // name of macros
         if ($this->op->val != '(') {
             $this->error('expected macro parameters');
@@ -528,6 +533,7 @@ class tpl_parser extends nat_parser
         $tag = array('tag' => 'block', 'operand' => count($this->operand), 'data' => array());
         $this->getExpression(); // получили имя идентификатора
         $tag['name'] = $this->popOp()->val;
+        $this->currentFunction=$tag['name'];
         $this->getNext();
         $this->block_internal(array('endblock'), $tag);
         $this->getNext();
