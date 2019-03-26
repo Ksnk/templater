@@ -27,10 +27,13 @@ class php_compiler extends tpl_parser
             ->newOp2('is', 11, array($this, 'function_filter'), 11)
             ->newOp2('== != > >= < <=', 2, null, 'B**')
             ->newOp2('and', 1, '(%s) && (%s)', 'BBB')
+            ->newOp2('&&', 1, '(%s) && (%s)', 'BBB')
             ->newOp2('or', 1, '(%s) || (%s)', 'BBB')
+            ->newOp2('||', 1, '(%s) || (%s)', 'BBB')
             ->newOp2('~', 2, '(%s).(%s)', 'SSS')
             ->newOp1('not', '!(%s)', 'BB')
-            ->newOp2('& << >>', 3)
+            ->newOp2('&', 3, '$this->_int(%s)& $this->_int(%s)', '*DD')
+            ->newOp2('<< >>', 3)
         // однопараметровые фильтры
         // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
@@ -43,29 +46,44 @@ class php_compiler extends tpl_parser
             ->newFunc('raw', '%s', 'SS')
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('replace', array($this, 'function_replace'), 'SSSS')
+            ->newFunc('is_dir', 'is_dir(%s)', 'SI')
             ->newFunc('length', 'count(%s)', 'DI')
             ->newFunc('lipsum', '$this->func_lipsum(%s)')
+            ->newFunc('round', 'round(%s)')
             ->newFunc('min')
             ->newFunc('max')
             ->newFunc('trim')
             ->newFunc('join', '$this->filter_join(%s)')
+            ->newFunc('repeat', '$this->func_repeat(%s)')
+            ->newFunc('json_encode', '$this->func_json_encode(%s)')
+            ->newFunc('explode', 'explode(%s)')
+            ->newFunc('price', 'number_format(%s,0,"."," ")')
             ->newFunc('default', '$this->filter_default(%s)')
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
             ->newFunc('slice', '$this->func_slice(%s)')
             ->newFunc('range', '$this->func_range(%s)')
             ->newFunc('keys', '$this->func_keys(%s)')
             ->newFunc('callex', '$this->callex(%s)')
+            ->newFunc('attribute', '$this->attr(%s)')
             ->newFunc('call', '$this->call($par,%s)')
             ->newFunc('translit', 'translit(%s)')
+            ->newFunc('shortcode', '$this->shortcode(%s)')
             ->newFunc('format', 'sprintf(%s)')
+            ->newFunc('setarray', '$this->func_setarray(%s)')
+            ->newFunc('link', '$this->func_enginelink(%s)')
+            ->newFunc('fileurl','$this->func_fileurl(%s)')
             ->newFunc('truncate', '$this->func_truncate(%s)')
+            ->newFunc('tourl', '$this->func_2url(%s)')
             ->newFunc('date', '$this->func_date(%s)')
             ->newFunc('finnumb', '$this->func_finnumb(%s)')
             ->newFunc('right', '$this->func_rights(%s)')
             ->newFunc('russuf', '$this->func_russuf(%s)')
+            ->newFunc('reg', '$this->func_reg(%s)')
             ->newFunc('in_array', '$this->func_in_array(%s)')
+            ->newFunc('is_array', '$this->func_is_array(%s)')
            // ->newFunc('parent', 'parent::_styles(%s)')
             ->newFunc('parent', array($this, 'function_parent'))
+            ->newFunc('debug', '\ENGINE::debug(%s)')
             ->newOp1('_echo_', array($this, '_echo_'));
 
     }
@@ -271,9 +289,9 @@ class php_compiler extends tpl_parser
      */
     function function_replace($op1, $op2)
     {
-        $op1->val = 'str_replace(' . $this->to('S', $op2->value['keys'][1])->val
+        $op1->val = '$this->func_replace(' . $this->to('S', $op2->value['keys'][0])->val
+            . ',' . $this->to('S', $op2->value['keys'][1])->val
             . ',' . $this->to('S', $op2->value['keys'][2])->val
-            . ',' . $this->to('S', $op2->value['keys'][0])->val
             . ')';
         $op1->type = "TYPE_OPERAND";
         return $op1;
@@ -290,6 +308,8 @@ class php_compiler extends tpl_parser
         foreach($op2->value['keys'] as &$v){
             $value[]=$this->to('S', $v)->val ;
         }
+        array_unshift($value,'$par');
+
         $op1->val = 'parent::_'.$this->currentFunction.'('.implode(',',$value).')' ;
         $op1->type = "TYPE_OPERAND";
         return $op1;

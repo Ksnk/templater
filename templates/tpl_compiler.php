@@ -1,14 +1,15 @@
 <?php
 /**
- * this file is created automatically at "21 Feb 2013 0:39". Never change anything, 
- * for your changes can be lost at any time. 
- */ 
+ * this file is created automatically at "11 Jun 2013 11:33". Never change anything,
+ * for your changes can be lost at any time.
+ */
 class tpl_compiler extends tpl_base {
 function __construct(){
 parent::__construct();
 }
 
-function _class(&$par){
+    function _class($par)
+    {
 $result='<?php
 /**
  * this file is created automatically at "'
@@ -23,7 +24,7 @@ class tpl_'
     .' {
 function __construct(){
 parent::__construct();';
-$loop1_array=ps($par['macro']);
+        $loop1_array = self::ps($par['macro']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $m){
 
@@ -33,8 +34,10 @@ $this->macro[\''
     .'\']=array($this,\'_'
     .($m)
     .'\');';
-}};
-$loop1_array=ps($par['import']);
+            }
+        }
+        ;
+        $loop1_array = self::ps($par['import']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $imp){
 
@@ -49,7 +52,7 @@ $this->macro=array_merge($this->macro,$'
 }};
 $result.='
 }';
-$loop1_array=ps($par['data']);
+        $loop1_array = self::ps($par['data']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $func){
 
@@ -62,14 +65,15 @@ $result.='
     return $result;
 }
 
-function _callmacro(&$par){
+    function _callmacro($par)
+    {
 $result='if(!empty($this->macro[\''
     .(isset($par['name'])?$par['name']:"")
     .'\']))
 $result.=call_user_func($this->macro[\''
     .(isset($par['name'])?$par['name']:"")
     .'\'],array(';
-$loop1_array=ps($par['parkeys']);
+        $loop1_array = self::ps($par['parkeys']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $p){
 
@@ -89,7 +93,8 @@ $result.=')';
     return $result;
 }
 
-function _callmacroex(&$par){
+    function _callmacroex($par)
+    {
 $result=(isset($par['par1'])?$par['par1']:"")
     .'->'
     .(isset($par['mm'])?$par['mm']:"")
@@ -99,7 +104,8 @@ $result=(isset($par['par1'])?$par['par1']:"")
     return $result;
 }
 
-function _set(&$par){
+    function _set($par)
+    {
 $result=(isset($par['id'])?$par['id']:"")
     .'='
     .(isset($par['res'])?$par['res']:"");
@@ -107,9 +113,9 @@ $result=(isset($par['id'])?$par['id']:"")
 }
 
 function _for(&$par){
-$result='$loop'
+        $result = '@$loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
-    .'_array=ps('
+            . '_array=self::ps('
     .(isset($par['in'])?$par['in']:"")
     .');';
 if( (isset($par['loop_index']) && !empty($par['loop_index'])) ) {
@@ -143,11 +149,13 @@ $result.='$loop'
     .';';
 };
 $result.='
-if (is_array($loop'
+if ((is_array($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array) && !empty($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
-    .'_array)){
+            . '_array))||($loop'
+            . (isset($par['loopdepth']) ? $par['loopdepth'] : "")
+            . '_array instanceof Traversable)){
 foreach($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array as '
@@ -187,7 +195,8 @@ else {
     return $result;
 }
 
-function _callblock(&$par){
+    function _callblock($par)
+    {
 $result='';
 $x=(isset($par['name'])?$par['name']:"");
 if( $x ) {
@@ -199,17 +208,18 @@ $result.='$this->_'
     return $result;
 }
 
-function _block(&$par){
+    function _block($par)
+    {
 $result='';
 if( (isset($par['name']) && !empty($par['name'])) ) {
 
-if( ((isset($par['tag'])?$par['tag']:""))==('macros') ) {
+            if ((((isset($par['tag']) ? $par['tag'] : "")) == ('macros'))) {
 
 $result.='
 function _'
     .(isset($par['name'])?$par['name']:"")
-    .'(&$namedpar';
-$loop1_array=ps($par['param']);
+                    . '($namedpar';
+                $loop1_array = self::ps($par['param']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $p){
 
@@ -234,9 +244,12 @@ $result.='
 function _'
     .(isset($par['name'])?$par['name']:"")
     .'(&$par){';
-};
-};
-$loop1_array=ps($par['data']);$loop1_index=0;
+            }
+            ;
+        }
+        ;
+        $loop1_array = self::ps($par['data']);
+        $loop1_index = 0;
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $blk){    $loop1_index++;
 
@@ -250,16 +263,15 @@ $result.='
 $result='
     .($xxx)
     .';';
-}
-elseif( ($xxx)!=('\'\'') ) {
+                    } elseif ((($xxx) != ('\'\''))) {
 
 $result.='
 $result.='
     .($xxx)
     .';';
-};
 }
-else {
+                    ;
+                } else {
 
 $result.='
 '
@@ -276,15 +288,16 @@ $result.='
     return $result;
 }
 
-function _if(&$par){
+    function _if($par)
+    {
 $result='';
 $if_index=1;
 $if_last=count((isset($par['data'])?$par['data']:""));
-$loop1_array=ps($par['data']);
+        $loop1_array = self::ps($par['data']);
 if (is_array($loop1_array) && !empty($loop1_array)){
 foreach($loop1_array as $d){
 
-if( ($if_index)==(1) ) {
+                if ((($if_index) == (1))) {
 
 $result.='if( '
     .$this->func_bk($d,'if')
@@ -293,8 +306,7 @@ $result.='if( '
     .$this->func_bk($d,'then')
     .'
 }';
-}
-elseif( ($this->func_bk($d,'if')) || (($if_index)!=($if_last)) ) {
+                } elseif (($this->func_bk($d, 'if')) || ((($if_index) != ($if_last)))) {
 
 $result.='
 elseif( '
@@ -313,13 +325,17 @@ else {
     .$this->func_bk($d,'then')
     .'
 }';
-};
-$if_index=($if_index)+(1);
-}};
+                }
+                ;
+                $if_index = (($if_index) + (1));
+            }
+        }
+        ;
     return $result;
 }
 
-function _ (&$par){
+    function _($par)
+    {
 $result=($this->_class($par))
     .($this->_callmacro($par))
     .($this->_callmacroex($par))

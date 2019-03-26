@@ -283,7 +283,7 @@ class tpl_parser extends nat_parser
         $triml = false;
         $strcns = '';
         // найти начало следующего тега шаблонизатора
-        while ($curptr < $total && preg_match($reg0, &$script, $m, 0, $curptr)) {
+        while ($curptr < $total && preg_match($reg0, $script, $m, 0, $curptr)) {
             if ($m[0] == '')
                 break; // что-то незаладилось в реге
             $strcns .= $m[1];
@@ -316,13 +316,13 @@ class tpl_parser extends nat_parser
             if ($m[2] == "") break; // нашли финальный кусок
 
             if ($m[2] == $this->options['COMMENT_LINE']) { // комментарий на всю линию
-                if (preg_match('~(.*?)\r?\n~i', &$script, $mm, 0, $curptr)) {
+                if (preg_match('~(.*?)\r?\n~i', $script, $mm, 0, $curptr)) {
                     $curptr += strlen($mm[1]);
                     continue;
                 }
             } elseif ($m[2] == $this->options['COMMENT_START']) { // комментарий? - ищем пару и продолжаем цирк
                 //$rreg='~.*?'.preg_quote($this->options['COMMENT_END'],'#~').'~si';
-                if (preg_match('~.*?' . preg_quote($this->options['COMMENT_END'], '#~') . '~si', &$script, $m, 0, $curptr)) {
+                if (preg_match('~.*?' . preg_quote($this->options['COMMENT_END'], '#~') . '~si', $script, $m, 0, $curptr)) {
                     $curptr += strlen($m[0]);
                     continue;
                 }
@@ -335,7 +335,7 @@ class tpl_parser extends nat_parser
 
             // отрезаем следующую лексему шаблонизатора
             $first = true;
-            while ($curptr < $total && preg_match($reg, &$script, $m, 0, $curptr)) {
+            while ($curptr < $total && preg_match($reg, $script, $m, 0, $curptr)) {
                 $pos = $curptr;
                 $curptr += strlen($m[0]);
                 if (!empty($m[1])) {
@@ -374,7 +374,7 @@ class tpl_parser extends nat_parser
                                         . '\s*endraw\s*'
                                         . preg_quote($this->options['BLOCK_END'], '#~')
                                         . '~si',
-                                    &$script, $m, 0, $curptr)
+                                    $script, $m, 0, $curptr)
                                 )
                                     $this->error('endraw missed');
                                 $curptr += strlen($m[0]);
@@ -611,7 +611,7 @@ class tpl_parser extends nat_parser
         $this->getExpression(); // получили имя файла для импорта
         $op = $this->popOp();
         $t =& $this->opensent('class');
-        $t['import'][] = basename($op->val, '.jtpl');
+        $t['import'][] = basename($op->val, '.'.template_compiler::options('TEMPLATE_EXTENSION','jtpl'));
         //   $this->getNext();
         return false;
     }
@@ -693,8 +693,9 @@ class tpl_parser extends nat_parser
         }
 
         if (!is_null($par)) {
+            $x =& $par;
             if (method_exists($tpl_compiler, '_' . $idx))
-                return call_user_func(array($tpl_compiler, '_' . $idx), &$par);
+                return @call_user_func(array($tpl_compiler, '_' . $idx), $x);
             else
                 printf('have no template "%s:%s"', 'tpl_compiler', '_' . $idx);
         }

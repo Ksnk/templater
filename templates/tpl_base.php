@@ -10,9 +10,82 @@
 class tpl_base
 {
 
+    static function pps(&$x, $default = '')
+    {
+        if (empty($x)) return $default; else return $x;
+    }
+
+    static function ps($x, $default = '')
+    {
+        if (empty($x)) return $default; else return $x;
+    }
+
     function __construct(){
         $this->macro=array();
     }
+
+    function sc_callback($m){
+        return ENGINE::exec(array('Main','shortcode'), array($m[1]));
+    }
+
+    function shortcode($s){
+        if(false!==strpos($s,'[[')){
+            return preg_replace_callback('/\[\[(.*?)\]\]/',array($this,'sc_callback'),
+                $s);
+        } else {
+            return $s;
+        }
+    }
+
+    /**
+     * преобразовать строку в url
+     * -- чистим теги, символы . + / и \
+     * @param $s
+     * @return string
+     */
+    function func_debug($s)
+    {
+        ENGINE::debug(func_get_args());
+        return $s;
+    }
+
+    /**
+     * преобразовать строку в url
+     * -- чистим теги, символы . + / и \
+     * @param $s
+     * @return string
+     */
+    function func_2url($s)
+    {
+        return str_replace(' ', '-',
+            UTILS::translit(preg_replace('~[\+/\.,;]~', '',
+                preg_replace('~\s+|&nbsp;~', ' ', strip_tags($s))
+            ))
+        );
+    }
+
+    /**
+     * Автоматически привести число к int.
+     * @param $s
+     * @return int
+     */
+    function _int($s)
+    {
+        if(empty($s)) return 0; else return 0+$s;
+    }
+
+    /**
+     * прокерка по регулярке
+     * @param $s
+     * @param $reg
+     * @return string
+     */
+    function func_reg($s, $reg)
+    {
+        // ENGINE::debug($reg,$s,preg_match($reg,$s));
+        return !!preg_match($reg, $s);
+    }
+
     /**
      * дополнить русские числительные
      * @param mixed $n
@@ -38,6 +111,15 @@ class tpl_base
 
     }
 
+    function func_json_encode($s){
+        return utf8_encode(json_encode($s));
+    }
+
+    function func_repeat($s,$num){
+        if(!is_numeric($num) || $num<=0) return '';
+        return str_repeat($s,$num);
+    }
+
     /**
      * еще один вариант
      * выдать один из вариантов, в зависимости от параметра
@@ -50,7 +132,10 @@ class tpl_base
      */
     function func_replace($n, $search='',$replace='')
     {
-        return str_replace($$search,$replace,$n);
+        if ($search && $search{0} == '/')
+            return preg_replace($search, $replace, $n);
+        else
+            return str_replace($search, $replace, $n);
     }
 
     /**
@@ -111,25 +196,52 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return $result;
     }
 
+    static function toRusDate($daystr=null,$format="j F, Y г."){
+        //print_r($datstr);
+        if ($daystr){
+            if(!is_numeric($daystr))
+                $daystr=strtotime($daystr);
+        }
+        else $daystr=time();
+        return	str_replace( //XXX: нужно проверить английские имена месяцев
+            array('january','february','march','april','may','june','july',
+                'august','september','october','november','december'),
+            array('января','февраля','марта','апреля','мая','июня','июля',
+                'августа','сентября','октября','ноября','декабря'),
+            strtolower(date($format,
+                $daystr)));
+    }
+
     function func_date($s, $format = "d m Y")
     {
-        if(function_exists('toRusDate')){
-           // debug($s);
-            return toRusDate($s, $format);
+        static $offset;
+        if(!isset($offset)) {
+            $timezone = 'Europe/Moscow';
+            $userTimezone = new DateTimeZone(!empty($timezone) ? $timezone : 'GMT');
+            $gmtTimezone = new DateTimeZone('GMT');
+            $myDateTime = new DateTime((date("r")), $gmtTimezone);
+            $offset = $userTimezone->getOffset($myDateTime);
         }
-        return date($format, strtotime($s));
+        if (!is_numeric($s)) $s=strtotime($s);
+        return self::toRusDate( $s+$offset, $format);
     }
 
     function func_truncate($s, $length = 255, $killwords = False, $end = ' ...')
     {
+        if ($killwords === 0) {
+            if (preg_match('/(?:\S+\s+){' . $length . '}/', strip_tags($s), $m))
+                return $m[0] . $end;
+            else
+                return $s;
+        }
         $s = trim(preg_replace('~\s+|&nbsp;~', ' ', strip_tags($s)));
         if ($killwords) {
-            if (strlen($s) > $length)
-                return substr($s, 0, $length) . $end;
+            if (mb_strlen($s, 'UTF-8') > $length)
+                return mb_substr($s, 0, $length, 'UTF-8') . $end;
             return $s;
         }
-        if (strlen($s) > $length)
-            return substr($s, 0, $length) . $end;
+        if (mb_strlen($s, 'UTF-8') > $length)
+            return mb_substr($s, 0, $length, 'UTF-8') . $end;
         return $s;
     }
 
@@ -187,15 +299,58 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
     }
 
     /**
+     * 3 возможных варианта
+     * -- класс-метод
+     * -- объект-атрибут
+     * -- класс-метод-параметры
+     * @param string $p1
+     * @param string $p2
+     * @param null $p3
+     * @param null $p4
+     * @return mixed
+     */
+    public function attr($p1 = 'MAIN', $p2 = '_handle', $p3 = null, $p4 = null)
+    {
+        if ($p1 == '') $p1 = $this;
+        // ENGINE::debug($p2,is_object($p1),method_exists($p1, $p2),is_array($p3));
+        if (is_string($p1)) {
+            $callable = array($p1, $p2);
+            return ENGINE::exec($callable, $p3);
+        } else if (is_object($p1)) {
+            $x = array();
+            if ($p1 instanceof tpl_Base) {
+                $p2 = '_' . $p2;
+                if (empty($p3)) $p3 = $x;
+                else if (!is_array($p3)) {
+                    $p3 = array(&$x, $p3, $p4);
+                }
+            }
+            if (method_exists($p1, $p2)) {
+                if (is_null($p3))
+                    return call_user_func(array($p1, $p2));
+                if (is_array($p3))
+                    return call_user_func_array(array($p1, $p2), $p3);
+                else
+                    return call_user_func(array($p1, $p2), $p3);
+            } else if (property_exists($p1, $p2)) {
+                return $p1->$p2;
+            }
+            ENGINE::error('no method/property ' . $p2);
+        }
+        return false;
+    }
+
+    /**
      * Интерфейсная функция - вызов данных снаружи шаблонизатора
      * @param string $plugin
      * @param string $method
      */
     public function callex($plugin = 'MAIN', $method = '_handle', $par1 = null, $par2 = null, $par3 = null)
     {
-        if (class_exists('ENGINE'))
-            return ENGINE::exec(array($plugin, $method), array($par1, $par2, $par3));
-        else {
+        if (class_exists('ENGINE')) {
+            $callable = array($plugin, $method);
+            return ENGINE::exec($callable, array($par1, $par2, $par3));
+        } else {
             global $engine;
             if (!empty($engine)) {
                 return $engine->export($plugin, $method, $par1, $par2, $par3);
@@ -220,6 +375,17 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return null;
     }
 
+    public function func_fileurl($id){
+        if(empty($id)) return '';
+        $f=new modelFile();
+        $r=$f->get($id);
+        return trim($r['filename'],'~');
+    }
+
+    public function func_enginelink($p1='',$p2='',$p3=''){
+        return UTILS::url($p1,$p2,$p3);
+    }
+
     /**
      * фильтр join
      * @param array $pieces
@@ -236,6 +402,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * фильтр in_array - проверка на наличие значения в массиве
      * @param mixed $p - mixed
      * @param array $a
+     * @return bool
      */
     function func_in_array($p, $a)
     {
@@ -243,6 +410,16 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
             return in_array($p, $a);
         else
             return $p == $a;
+    }
+
+    /**
+     * фильтр is_array - массив или траверсабл
+     * @param mixed $p - mixed
+     * @return bool
+     */
+    function func_is_array($p)
+    {
+        return (is_array($p) || $p instanceof Traversable);
     }
 
     /**
@@ -275,6 +452,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
     /**
      * Хелпер для циклов.
      * @param unknown_type $loop_array
+     * @return mixed|string
      */
     function loopcycle(&$loop_array)
     {
@@ -294,11 +472,18 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         $result=&$el;
         foreach ($x as $idx){
             if (is_array($result) && array_key_exists($idx,$result)) $result=&$result[$idx];
-            elseif (is_object($result)) $result=&$result->$idx ;
+            elseif (is_object($result))
+                @$result = &$result->$idx;
             else return '';
         }
-        return $result;
+        $x = $result;
+        unset($result);
+        return $x;
     }
 
 
+    function func_setarray(&$a,$b,$val){
+        $a[$b]=preg_replace('/~/',$val,isset($a[$b])?$a[$b]:'');
+        return '';
+    }
 }

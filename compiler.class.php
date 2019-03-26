@@ -2,7 +2,7 @@
 /**
  * helper class to check template modification time
  * <%=point('hat','jscomment');
-// эти пустые строки оставлены для того, чтобы номера строк совпадали   
+// эти пустые строки оставлены для того, чтобы номера строк совпадали
 
 
 
@@ -88,16 +88,17 @@ class template_compiler
     static function checktpl($options = '')
     {
         static $include_done;
-        if(!class_exists('tpl_base'))
-            include_once (template_compiler::options('templates_dir') . 'tpl_base.php');
-
         if (defined('TEMPLATE_PATH')) {
             self::options('TEMPLATE_PATH', TEMPLATE_PATH);
             self::options('PHP_PATH', TEMPLATE_PATH);
         }
-        $ext=self::options('TEMPLATE_EXTENSION',null, 'jtpl');
         if (!empty($options))
             self::options($options);
+
+        $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
+
+        if (!class_exists('tpl_base'))
+            include_once (template_compiler::options('templates_dir') . 'tpl_base.php');
         //$time = microtime(true);
         $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
@@ -109,9 +110,10 @@ class template_compiler
                 $name = basename($v, "." . $ext);
                 $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
                 //echo($phpn.' '.$v);
-                if (!file_exists($phpn)
-                    ||
-                    (max($xtime, filemtime($v)) > filemtime($phpn))
+                if (
+                    ''!=empty(self::options('FORCE'))
+                    || !file_exists($phpn)
+                    || (max($xtime, filemtime($v)) > filemtime($phpn))
                 ) {
                     if (empty($include_done)) {
                         $include_done = true;
