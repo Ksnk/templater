@@ -24,7 +24,7 @@ class CompilationException extends Exception
 class operand
 {
     var
-        $val // значение операнда
+       $val // значение операнда
     , $type // тип операнда
     , $handler = '' // функция
     , $pos // позиция курсора
@@ -43,6 +43,12 @@ class operand
     function __toString()
     {
         return $this->val;
+    }
+
+    function __get($name)
+    {
+        $this->$name='';
+        return '';
     }
 
     /*	// функция конвертирования операнда в новый тип

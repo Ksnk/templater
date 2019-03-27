@@ -1,9 +1,8 @@
 <?php
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    ini_set('include_path', ini_get('include_path') . PATH_SEPARATOR . dirname(dirname(__FILE__)));
-    require 'PHPUnit/Autoload.php';
-}
+include_once '../vendor/autoload.php';
+
+use PHPUnit\Framework\TestCase;
 
 include_once 'header.inc.php';
 
@@ -23,8 +22,8 @@ class engine
 
 $GLOBALS['engine'] = new engine();
 
-class Test_Templater extends PHPUnit_Framework_TestCase {
-	
+class Test_Templater extends TestCase {
+
 	var $this_template='../templates/compiler.jtpl';
 
 	function compile_it($class_name='compiler'){
@@ -41,9 +40,9 @@ class Test_Templater extends PHPUnit_Framework_TestCase {
 		}
 		return '';
 	}
-	
+
 	// тестируемые данные
-	
+
 	/**
 	 * тестируем оттранслированный шаблон
 	 */
@@ -64,9 +63,3 @@ class Test_Templater extends PHPUnit_Framework_TestCase {
 		);
 	}
 }
-
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    $suite = new PHPUnit_Framework_TestSuite('Test_Templater');
-    PHPUnit_TextUI_TestRunner::run($suite);
-}
-?>

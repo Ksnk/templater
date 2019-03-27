@@ -1,9 +1,7 @@
 <?php
+include_once '../vendor/autoload.php';
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    ini_set('include_path', ini_get('include_path') . PATH_SEPARATOR . dirname(dirname(__FILE__)));
-    require 'PHPUnit/Autoload.php';
-}
+use PHPUnit\Framework\TestCase;
 
 include_once 'header.inc.php';
 
@@ -35,12 +33,12 @@ class tpl_test extends tpl_base{
         return $this->_test($par).' Calling parent_ method';
     }
 
-    function _test(){
+    function _test(&$par){
         return 'Calling parent test! Ok! ';
     }
 }
 
-class templateTest extends PHPUnit_Framework_TestCase
+class templateTest extends TestCase
 {
 
     function compress($s)
@@ -54,51 +52,17 @@ class templateTest extends PHPUnit_Framework_TestCase
     function _test_cmpl($tpl, $data, $show = false,$macro='_')
     {
         static $classnumber = 10;
-        $classnumber++;
+        while(class_exists('tpl_test' . $classnumber))
+           $classnumber++;
         $calc = new php_compiler();
-        //list($tpl,$macro,$rest)=explode('|',$tpl.'|_|',3);
         $calc->makelex($tpl);
-
-//        foreach($calc->lex as $v) echo $v->val.'
-//';
-
-//		try {
         $result = $calc->tplcalc('test' . $classnumber);
 
         if ($show) echo $result . "\n\n";
-        //error_log($result."\n\n",3,'log.log');
-        //echo $result;
         eval ('?>' . $result);
         $t = 'tpl_test' . $classnumber;
         $t = new $t();
         return $t->$macro($data);
-        /*		} catch(Exception $e) {
-              print_r($e->getMessage());echo'</pre>';
-              return 'XXX';
-          }*/
-    }
-
-    /**
-     * тестирование шаблона без трансляции нового класса
-     */
-    function _test_tpl($tpl, $data, $show = false)
-    {
-        $calc = new php_compiler();
-        $calc->makelex($tpl);
-//        foreach($calc->lex as $v) echo $v->val.'
-//';
-//		try {
-        $result = $calc->block_internal();
-        $x = '$result="";' . $calc->popOp()->val . ' return $result;';
-        if ($show) echo $x . "\n\n";
-        //if (isset($_GET['debug']))
-        //	error_log($x,3,'log.log');
-        $fnc = create_function('&$par', $x);
-        return $fnc($data);
-        /*		} catch(Exception $e){
-              print_r($e->getMessage());echo'</pre>';
-              return 'XXX';
-          }*/
     }
 
     /** test extends-parent  */
@@ -137,7 +101,7 @@ class templateTest extends PHPUnit_Framework_TestCase
                 'perpage'=>15,
                 'url'=>"http:xxx.com/xxx?",
                 'page'=>5,
-            )),true,'_paging'), $pattern
+            )),false,'_paging'), $pattern
         );
     }
 
@@ -203,7 +167,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = '1on\\e\'s 2on\\e\'s 2one"s 1one"s ';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -259,7 +223,7 @@ class templateTest extends PHPUnit_Framework_TestCase
         $data = array('if' => "'hello'", 'then' => 'world');
         $s = 'if( {{if}} ){ {{then }} };';
         $this->assertEquals(
-            $this->_test_tpl($s, $data),
+            $this->_test_cmpl($s, $data),
             'if( \'hello\' ){ world };'
         );
     }
@@ -277,7 +241,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = '123456789';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -295,7 +259,7 @@ class templateTest extends PHPUnit_Framework_TestCase
 {%- endfor %}';
         $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
         $this->assertEquals(
-            $this->_test_tpl($s, $data), $pattern
+            $this->_test_cmpl($s, $data), $pattern
         );
     }
 
@@ -815,9 +779,3 @@ class templateTest extends PHPUnit_Framework_TestCase
     }
 
 }
-
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    $suite = new PHPUnit_Framework_TestSuite('templateTest');
-    PHPUnit_TextUI_TestRunner::run($suite);
-}
-?>

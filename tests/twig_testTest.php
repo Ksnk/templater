@@ -1,10 +1,9 @@
 <?php
 /* тырим тесты из тестового набора twig */
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    ini_set('include_path', ini_get('include_path') . PATH_SEPARATOR . dirname(dirname(__FILE__)));
-    require 'PHPUnit/Autoload.php';
-}
+include_once '../vendor/autoload.php';
+
+use PHPUnit\Framework\TestCase;
 
 include_once 'header.inc.php';
 
@@ -24,7 +23,7 @@ if (!class_exists('engine')) {
     }
 }
 
-class twig_testTest extends PHPUnit_Framework_TestCase
+class twig_testTest extends TestCase
 {
     function _test_tpl($data, $show = false)
     {
@@ -185,8 +184,3 @@ function testMacroError(){  // после первого endif пропущен�
 
 }
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    $suite = new PHPUnit_Framework_TestSuite('twig_testTest');
-    PHPUnit_TextUI_TestRunner::run($suite);
-}
-?>
