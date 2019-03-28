@@ -8,6 +8,9 @@
 
 %>
  */
+
+namespace Ksnk\templater ;
+
 class php_compiler extends tpl_parser
 {
 
@@ -88,6 +91,11 @@ class php_compiler extends tpl_parser
 
     }
 
+    /**
+     * @param $msgId
+     * @param object|null $lex
+     * @throws Exception
+     */
     function error($msgId, $lex = null)
     {
         $mess = pps($this->error_msg[$msgId], $msgId);
@@ -115,7 +123,8 @@ class php_compiler extends tpl_parser
      * конвертирование операнда в то или иное состояние
      * @param array $types - массив с именами типов для конвертирвоания
      * @param operand $res - операнд
-     * @see nat2php/parser::to()
+     * @return operand
+     * @throws Exception
      */
     function to($types, &$res)
     {
@@ -301,6 +310,8 @@ class php_compiler extends tpl_parser
      * фильтр - replace
      * @param operand $op1 - TYPE_ID - имя функции
      * @param operand $op2 - TYPE_LIST - параметры функции
+     * @return operand
+     * @throws Exception
      */
     function function_parent($op1,$op2)
     {

@@ -52,17 +52,19 @@ class templateTest extends TestCase
     function _test_cmpl($tpl, $data, $show = false,$macro='_')
     {
         static $classnumber = 10;
-        while(class_exists('tpl_test' . $classnumber))
+        while(class_exists('tpl_test' . $classnumber, false))
            $classnumber++;
-        $calc = new php_compiler();
+        $calc = new \Ksnk\templater\php_compiler();
         $calc->makelex($tpl);
         $result = $calc->tplcalc('test' . $classnumber);
-
-        if ($show) echo $result . "\n\n";
-        eval ('?>' . $result);
         $t = 'tpl_test' . $classnumber;
-        $t = new $t();
-        return $t->$macro($data);
+        if ($show) echo $result . "\n\n";
+        file_put_contents($t.'.php',$result); include($t.'.php');
+//        eval ('?'.'>' . $result);
+        $tt = new $t();
+        $x= $tt->$macro($data);
+        unlink($t.'.php');
+        return $x;
     }
 
     /** test extends-parent  */

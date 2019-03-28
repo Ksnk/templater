@@ -29,11 +29,8 @@ class twig_testTest extends TestCase
     {
         static $classnumber = 340000;
         $classnumber++;
-        $calc = new php_compiler();
+        $calc = new \Ksnk\templater\php_compiler();
         $calc->makelex($data['index']);
-
-//        foreach($calc->lex as $v) echo $v->val.'
-//';
 
         $result = $calc->tplcalc('test' . $classnumber);
 

@@ -9,21 +9,7 @@
 %>
  */
 
-/**
- * helper function to check if value is empty
- */
-if (!function_exists('pps')) {
-    function pps(&$x, $default = '')
-    {
-        if (empty($x)) return $default; else return $x;
-    }
-}
-if (!function_exists('ps')) {
-    function ps($x, $default = '')
-    {
-        if (empty($x)) return $default; else return $x;
-    }
-}
+namespace Ksnk\templater ;
 
 class template_compiler
 {
@@ -43,23 +29,15 @@ class template_compiler
             self::$opt[$options] = $val;
         else if (isset(self::$opt[$options]))
             return self::$opt[$options];
-        else return $default;
-    }
 
-    static function do_prepare()
-    {
-        static $done;
-        if (!empty($done)) return;
-        require_once 'nat2php.class.php';
-        require_once 'template_parser.class.php';
-        require_once 'compiler.php.php';
-        $done = true;
+        return $default;
     }
 
     /**
      * функция компиляции текста. Результатом будет
      * текст функции, для вставки в шаблон
      * @param string $tpl
+     * @return mixed|null|string
      */
     static function compile_tpl($tpl, $name = 'compiler')
     {
@@ -87,7 +65,6 @@ class template_compiler
      */
     static function checktpl($options = '')
     {
-        static $include_done;
         if (defined('TEMPLATE_PATH')) {
             self::options('TEMPLATE_PATH', TEMPLATE_PATH);
             self::options('PHP_PATH', TEMPLATE_PATH);
@@ -103,24 +80,16 @@ class template_compiler
         $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
         $xtime = filemtime(__FILE__);
-        $include_dir=dirname(__FILE__) ;
 
         if (!empty($templates)) {
             foreach ($templates as $v) {
                 $name = basename($v, "." . $ext);
                 $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
-                //echo($phpn.' '.$v);
                 if (
                     ''!=empty(self::options('FORCE'))
                     || !file_exists($phpn)
                     || (max($xtime, filemtime($v)) > filemtime($phpn))
                 ) {
-                    if (empty($include_done)) {
-                        $include_done = true;
-                        require_once $include_dir.'/nat2php.class.php';
-                        require_once $include_dir.'/template_parser.class.php';
-                        require_once $include_dir.'/compiler.php.php';
-                    }
                     php_compiler::$filename = $v;
                     $x = self::compile_tpl(file_get_contents($v), $name);
                     if (!!$x)
@@ -128,7 +97,6 @@ class template_compiler
                 }
             }
         }
-       // $time = microtime(true) - $time; echo $time.' sec spent';
     }
 
 }

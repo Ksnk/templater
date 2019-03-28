@@ -196,20 +196,64 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return $result;
     }
 
+    /**
+     * стандарные конвертеры не умеют месяцы в родительном падеже. Как так ?
+     * @param null $daystr
+     * @param string $format
+     * @return mixed
+     */
     static function toRusDate($daystr=null,$format="j F, Y г."){
-        //print_r($datstr);
         if ($daystr){
             if(!is_numeric($daystr))
                 $daystr=strtotime($daystr);
         }
         else $daystr=time();
-        return	str_replace( //XXX: нужно проверить английские имена месяцев
-            array('january','february','march','april','may','june','july',
-                'august','september','october','november','december'),
-            array('января','февраля','марта','апреля','мая','июня','июля',
-                'августа','сентября','октября','ноября','декабря'),
-            strtolower(date($format,
-                $daystr)));
+        $replace=array(
+            'january'=>'января',
+            'february'=>'февраля',
+            'march'=>'марта',
+            'april'=>'апреля',
+            'may'=>'мая',
+            'june'=>'июня',
+            'july'=>'июля',
+            'august'=>'августа',
+            'september'=>'сентября',
+            'october'=>'октября',
+            'november'=>'ноября',
+            'december'=>'декабря',
+
+            'jan'=>'янв',
+            'feb'=>'фев',
+            'mar'=>'мар',
+            'apr'=>'апр',
+//        'may'=>'мая',
+            'jun'=>'июн',
+            'jul'=>'июл',
+            'aug'=>'авг',
+            'sep'=>'сен',
+            'oct'=>'окт',
+            'nov'=>'ноя',
+            'dec'=>'дек',
+
+            'monday'=>'понедельник',
+            'tuesday'=>'вторник',
+            'wednesday'=>'среда',
+            'thursday'=>'четверг',
+            'friday'=>'пятница',
+            'saturday'=>'суббота',
+            'sunday'=>'воскресенье',
+
+            'mon'=>'пнд',
+            'teu'=>'втр',
+            'wed'=>'срд',
+            'thu'=>'чтв',
+            'fri'=>'птн',
+            'sat'=>'сбб',
+            'sun'=>'вск',
+        );
+
+        return	str_replace(array_keys($replace),array_values($replace),
+            strtolower(date($format, $daystr)));
     }
 
     function func_date($s, $format = "d m Y")
@@ -280,6 +324,11 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * функция lipsum
+     * @param int $n
+     * @param bool $html
+     * @param int $min
+     * @param int $max
+     * @return string
      */
     function func_lipsum($n = 5, $html = True, $min = 20, $max = 100)
     {
@@ -344,6 +393,10 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * Интерфейсная функция - вызов данных снаружи шаблонизатора
      * @param string $plugin
      * @param string $method
+     * @param null $par1
+     * @param null $par2
+     * @param null $par3
+     * @return array
      */
     public function callex($plugin = 'MAIN', $method = '_handle', $par1 = null, $par2 = null, $par3 = null)
     {
@@ -361,8 +414,9 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * Интерфейсная функция - метода, передаваемого параметром
-     * @param string $plugin
-     * @param string $method
+     * @param $par
+     * @param $s
+     * @return mixed|null
      */
     public function call(&$par, $s)
     {
@@ -390,6 +444,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * фильтр join
      * @param array $pieces
      * @param string $glue
+     * @return string
      */
     function filter_join($pieces, $glue)
     {
@@ -443,6 +498,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * фильтр default - вывод значения по умолчанию, при пустом параметре
      * @param $par
      * @param $def
+     * @return mixed
      */
     function filter_default($par, $def)
     {
@@ -451,7 +507,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * Хелпер для циклов.
-     * @param unknown_type $loop_array
+     * @param array $loop_array
      * @return mixed|string
      */
     function loopcycle(&$loop_array)
