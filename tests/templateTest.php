@@ -33,7 +33,7 @@ class tpl_test extends tpl_base{
         return $this->_test($par).' Calling parent_ method';
     }
 
-    function _test(&$par){
+    function _test($par){
         return 'Calling parent test! Ok! ';
     }
 }

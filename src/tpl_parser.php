@@ -11,6 +11,8 @@
 
 namespace Ksnk\templater ;
 
+use Ksnk\templater\scaner;
+
 class tpl_parser
 {
     const
@@ -407,13 +409,52 @@ class tpl_parser
      */
     function makelex($script)
     {
+        $curptr = 0;
+        $scaner=new scaner();
+        $scaner->newbuf($script);
+        // предварительное сканирование - режем исходник на началы тегов, до конца тегов
+        // добираемся уже внутри колбяка
+        $scaner->syntax([
+            'cline' => preg_quote($this->options['COMMENT_LINE']),
+            'xstart' => preg_quote($this->options['VARIABLE_START']),
+            'cstart' => preg_quote($this->options['COMMENT_START']),
+            'bstart' => preg_quote($this->options['BLOCK_START']),
+            'start_0' => ':cline:|:xstart:|:cstart:',
+            'start_1' => ':start_0:|:bstart:',
+            'trim' => preg_quote('-'),
+        ], '~:start_1::trim:?~sm',
+            function ($line) use (&$curptr, &$scaner) {
+                print_r($line);
+                if(!empty($line['cline'])) {
+                    $scaner->scan('~(.*?)\r?\n~i');
+                    return;
+                } else if(!empty($line['cstart'])) {
+                    $scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
+                    return;
+                }
+                if (!empty($line['trim'])) {
+                    $line['_skiped'] = preg_replace('/\s+$/s', '', $line['_skiped']);
+                }
+                if(!empty($line['bstart']) && $this->isOption('COMPRESS_START_BLOCK')) {
+                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                }
+                if(!empty($line['_skiped'])) {
+                    $pos=$scaner->getpos();
+                    $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
+                    $this->lex[] = $this->oper($line['_skiped'], self::TYPE_STRING, $pos);
+                    $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
+                    $line['_skiped']='';
+                }
+
+            }
+        );
+
         $this->script = $script;
         $this->operand = array();
         $this->operation = array();
         $this->lex = array();
         $this->curlex = 0;
         $types = array();
-        $curptr = 0;
 
         // привязываем номер строки к позиции транслятора
         $this->scanNl($script);
@@ -860,10 +901,10 @@ class tpl_parser
     function exec_tag($tag)
     {
         $name = 'tag_' . $tag;
-        if (class_exists($name, false)) {
+        if (class_exists($name, true)) {
             $tag = new $name();
             $tag->execute($this);
-        } elseif (class_exists($cl=__NAMESPACE__.'\\'.$name, false)) {
+        } elseif (class_exists($cl=__NAMESPACE__.'\\'.$name, true)) {
             $tag = new $cl();
             $tag->execute($this);
         } else if (method_exists($this, $name)) {
@@ -1531,227 +1572,4 @@ class tpl_parser
 
 }
 
-/**
- * класс - for
- */
-
-class tag_for
-{
-
-    /**
-     * @var tpl_parser
-     */
-    private $parcer,
-        /** array */
-        $tag;
-
-    /**
-     * Описание хелпера loop для тега for
-     */
-    function operand_loop($op1 = null, $attr = null, $reson = 'attr')
-    {
-        $_attr = property_exists($op1, 'attr') ? $op1->attr : '';
-        $tag =& $this->tag;
-        $loopdepth = $tag['loopdepth'];
-        while (strpos($_attr, '.parent.loop') !== false) {
-            $_attr = substr($_attr, 12);
-            while ($loopdepth-- > 0 && $this->parcer->opensentence[$loopdepth]['tag'] != 'for') {
-            }
-            $tag = &$this->parcer->opensentence[$loopdepth];
-        }
-        // найти ближайший открытый for и отметить, что loop там используется.
-        if ($reson == 'call') {
-            // рекурсивный вызов цикла еще раз
-            if ($_attr == '.cycle') {
-                $tag['loop_cycle'] = 'array(' . $this->parcer->to('S', $attr)->val . ')';
-                return $this->parcer->oper('$this->loopcycle($loop' . $loopdepth . '_cycle)', tpl_parser::TYPE_OPERAND);
-            } else {
-                $this->parcer->error('calling not a callable construction ' . $_attr);
-            }
-        } else if (is_null($attr) || $attr instanceof tpl_parser) {
-            $op = $this->parcer->oper('loop', tpl_parser::TYPE_OBJECT);
-            $op->attr = '';
-            $op->handler = array($this, 'operand_loop');
-            return $op;
-        } else if ($reson == 'attr') {
-            if (is_object($attr)) $attr = $attr->val;
-            if (in_array($attr,
-                array('first', 'cycle', 'last', 'index0', 'loop', 'parent', 'revindex', 'revindex0', 'length', 'index')
-            )
-            ) {
-                $op1->attr .= '.' . $attr;
-                return $op1;
-            } else {
-                $this->parcer->error('undefined loop attribute(1)-"' . $attr . '"!');
-            }
-        } else if ($reson == 'value') {
-            switch ($_attr) {
-                case '.first':
-                    $tag['loop_index'] = true;
-                    return '$loop' . $loopdepth . '_index==1';
-                case '.last' :
-                    $tag['loop_index'] = true;
-                    $tag['loop_last'] = true;
-                    return '$loop' . $loopdepth . '_index==$loop' . $loopdepth . '_last';
-                case '.cycle':
-                    $tag['loop_cycle'] = true;
-                    return '';
-                case '.index0':
-                    $tag['loop_index'] = true;
-                    return '($loop' . $loopdepth . '_index-1)';
-                case '.revindex':
-                    $tag['loop_revindex'] = true;
-                    $tag['loop_last'] = true;
-                    return '$loop' . $loopdepth . '_revindex';
-                case '.revindex0':
-                    $tag['loop_revindex'] = true;
-                    $tag['loop_last'] = true;
-                    return '($loop' . $loopdepth . '_revindex-1)';
-                case '.length':
-                case '.index':
-                    $tag['loop_index'] = true;
-                    return '$loop' . $loopdepth . '_' . substr($_attr, 1);
-                default :
-                    $this->parcer->error('undefined loop attribute-"' . $_attr . '"!');
-            }
-        }
-    }
-
-    /**
-     * @param tpl_parser $parcer
-     * @throws CompilationException
-     */
-    function execute($parcer)
-    {
-        // парсинг тега for
-        // полная форма:
-        // for OPERAND in EXPRESSION [if EXPRESSION]
-        // промежуточный else
-        // финишный endfor
-        $this->tag = array('tag' => 'for',
-            'operand' => count($parcer->operand),
-            'loopdepth' => count($parcer->opensentence)
-        );
-        $parcer->opensentence[] = &$this->tag;
-        $parcer->getExpression(); // получили имя идентификатора
-        $id = $parcer->newId($parcer->popOp());
-        $this->tag['index'] = $parcer->to(array('I', 'value'), $id);
-        //
-        if ($parcer->op->val == ',') { // key-value pair selected
-            $parcer->getNext();
-            $parcer->getExpression();
-            $id = $parcer->newId($parcer->popOp());
-            $this->tag['index2'] = $parcer->to(array('I', 'value'), $id);
-        }
-
-        $this->parcer = $parcer;
- /*       $op = $parcer->oper('loop', self::TYPE_OBJECT);
-        $op->handler = array($this, 'operand_loop');
-        $parcer->newOpr('loop', $op);  */
-
-        $parcer->newOpr('loop', array($this, 'operand_loop'));
-
-        //$parcer->newId($parcer->oper('loop', self::TYPE_ID));
-        do {
-            $parcer->getNext();
-            switch (strtolower($parcer->op->val)) {
-                case 'in':
-                    $parcer->getExpression();
-                    // $this->tag['in'] = $parcer->popOp();
-                    $id = $parcer->popOp();
-                    $this->tag['in'] = $parcer->to(array('I', 'value'), $id);
-                    break;
-                case 'if':
-                    $parcer->getExpression();
-                    $id = $parcer->popOp();
-                    $this->tag['if'] = $parcer->to(array('*', 'value'), $id);
-                    break;
-                case 'recursive':
-                    $this->tag['recursive'] = true;
-                    break;
-                default:
-                    if ($parcer->op->type == tpl_parser::TYPE_COMMA)
-                        break 2;
-                    else
-                        $parcer->error('unexpected construction1');
-            }
-        } while (true);
-        //$parcer->opensentence[]=$this->tag;
-
-        $this->tag['else'] = false;
-        do {
-            $parcer->block_internal(array('else', 'endfor'));
-            $parcer->getNext();
-            $op = $parcer->popOp();
-            if ($parcer->op->val == 'else') {
-                $this->tag['body'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
-                $this->tag['else'] = true;
-                // $parcer->getNext(); // съели символ, закрывающий тег
-            } elseif ($parcer->op->val == 'endfor') {
-                $parcer->getNext(); // съели символ, закрывающий тег
-                if ($this->tag['else']) {
-                    $this->tag['else'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
-                } else {
-                    $this->tag['body'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
-                }
-                // генерируем все это добро
-                $parcer->pushOp($parcer->oper($parcer->template('for', $this->tag), tpl_parser::TYPE_SENTENSE));
-                do {
-                    $op = array_pop($parcer->opensentence);
-                    if ($op['tag'] == 'for') break;
-                } while (!empty($op) && true);
-
-                break;
-            }
-        } while (true);
-        //$parcer->getNext(); // съели символ, закрывающий тег
-
-    }
-}
-
-/**
- * класс для вывода ошибок компиляции
- */
-class CompilationException extends \Exception
-{
-}
-
-/**
- * внутренний базовый класс для хранения операндов на стеках
- */
-class operand
-{
-    var
-        $val // значение операнда
-    , $type // тип операнда
-    , $handler = '' // функция
-    , $pos // позиция курсора
-    , $prio // приоритет операции для операций
-    , $orig //
-//		, $unop // признак унарной операции для унарных операций
-    ;
-
-    function __construct($val, $type = nat_parser::TYPE_NONE, $pos = 0)
-    {
-        $this->val = $val;
-        $this->type = $type;
-        $this->pos = $pos;
-    }
-
-    function __toString()
-    {
-        return $this->val;
-    }
-
-    function __get($name)
-    {
-        $this->$name='';
-        return '';
-    }
-
-    /*	// функция конвертирования операнда в новый тип
-     function &_to($type){
-         return $this;
-     }*/
-}
 
