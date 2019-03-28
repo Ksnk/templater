@@ -29,12 +29,14 @@ class Test_Templater extends TestCase {
 	function compile_it($class_name='compiler'){
 		static $compiler;
 		if(empty($compiler))
-			$compiler=new template_compiler();
-		if(!class_exists('tpl_'.$class_name)){
+			$compiler=new \Ksnk\templater\template_compiler();
+		if(!class_exists($t='tpl_'.$class_name, false)){
 			if(is_file($this->this_template)){
 				$x=$compiler->compile_tpl(file_get_contents($this->this_template),$class_name);
-				echo'<pre>'.htmlspecialchars($x).'</pre>';
-				eval('?>'.$x);
+                file_put_contents($t.'.php',str_replace('class tpl_test extends','class '.$t.' extends',$x));
+                include($t.'.php');
+
+                echo'<pre>'.htmlspecialchars($x).'</pre>';
 				return $x;
 			}
 		}

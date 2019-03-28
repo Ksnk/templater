@@ -1,20 +1,20 @@
 <?php
 /**
- * this file is created automatically at "27 Mar 2019 16:09". Never change anything,
+ * this file is created automatically at "28 Mar 2019 12:31". Never change anything,
  * for your changes can be lost at any time.
- */
+ */ 
 class tpl_compiler extends tpl_base {
 function __construct(){
 parent::__construct();
 }
 
-function _class(&$par){
+function _class($par){
 $result='<?php
 /**
  * this file is created automatically at "'
     .(date('d M Y G:i'))
-    .'". Never change anything, 
- * for your changes can be lost at any time. 
+    .'". Never change anything,
+ * for your changes can be lost at any time.
  */ 
 class tpl_'
     .(isset($par['name'])?$par['name']:"")
@@ -23,8 +23,9 @@ class tpl_'
     .' {
 function __construct(){
 parent::__construct();';
-$loop1_array=self::ps($par['macro']);
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['macro']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $m){
 
 $result.='
@@ -34,8 +35,9 @@ $this->macro[\''
     .($m)
     .'\');';
 }};
-$loop1_array=self::ps($par['import']);
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['import']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $imp){
 
 $result.='$'
@@ -49,8 +51,9 @@ $this->macro=array_merge($this->macro,$'
 }};
 $result.='
 }';
-$loop1_array=self::ps($par['data']);
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['data']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $func){
 
 $result.='
@@ -62,16 +65,16 @@ $result.='
     return $result;
 }
 
-function _callmacro(&$par){
+function _callmacro($par){
 $result='if(!empty($this->macro[\''
     .(isset($par['name'])?$par['name']:"")
-    .'\'])){
+    .'\']))
 $result.=call_user_func($this->macro[\''
-    .(isset($par['name'])?$par['name']:'')
-    .'\'],';
-$loop1_array=self::ps($par['parkeys']);
-if (is_array($loop1_array) && !empty($loop1_array)){
-    $result.='array(';
+    .(isset($par['name'])?$par['name']:"")
+    .'\'],array(';
+@$loop1_array=self::ps($par['parkeys']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $p){
 
 $result.='\''
@@ -79,22 +82,18 @@ $result.='\''
     .'\'=>'
     .$this->func_bk($p,'value')
     .',';
-}
-    $result.=')';
-} else {
-    $result.='array()';
-};
+}};
+$result.=')';
 if( (isset($par['param']) && !empty($par['param'])) ) {
 
 $result.=','
     .($this->filter_join((isset($par['param'])?$par['param']:""),', '));
 };
-$result.=');
-}';
+$result.=')';
     return $result;
 }
 
-function _callmacroex(&$par){
+function _callmacroex($par){
 $result=(isset($par['par1'])?$par['par1']:"")
     .'->'
     .(isset($par['mm'])?$par['mm']:"")
@@ -104,15 +103,15 @@ $result=(isset($par['par1'])?$par['par1']:"")
     return $result;
 }
 
-function _set(&$par){
+function _set($par){
 $result=(isset($par['id'])?$par['id']:"")
     .'='
     .(isset($par['res'])?$par['res']:"");
     return $result;
 }
 
-function _for(&$par){
-$result='$loop'
+function _for($par){
+$result='@$loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array=self::ps('
     .(isset($par['in'])?$par['in']:"")
@@ -148,11 +147,14 @@ $result.='$loop'
     .';';
 };
 $result.='
-if (is_array($loop'
+if ((is_array($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array) && !empty($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
-    .'_array)){
+    .'_array))
+||($loop'
+    .(isset($par['loopdepth'])?$par['loopdepth']:"")
+    .'_array instanceof Traversable)){
 foreach($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array as '
@@ -192,7 +194,7 @@ else {
     return $result;
 }
 
-function _callblock(&$par){
+function _callblock($par){
 $result='';
 $x=(isset($par['name'])?$par['name']:"");
 if( $x ) {
@@ -204,7 +206,7 @@ $result.='$this->_'
     return $result;
 }
 
-function _block(&$par){
+function _block($par){
 $result='';
 if( (isset($par['name']) && !empty($par['name'])) ) {
 
@@ -214,8 +216,9 @@ $result.='
 function _'
     .(isset($par['name'])?$par['name']:"")
     .'($namedpar';
-$loop1_array=self::ps($par['param']);
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['param']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $p){
 
 $result.=',$'
@@ -238,11 +241,12 @@ else {
 $result.='
 function _'
     .(isset($par['name'])?$par['name']:"")
-    .'(&$par){';
+    .'($par){';
 };
 };
-$loop1_array=self::ps($par['data']);$loop1_index=0;
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['data']);$loop1_index=0;
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $blk){    $loop1_index++;
 
 if( $this->func_bk($blk,'string') ) {
@@ -281,12 +285,13 @@ $result.='
     return $result;
 }
 
-function _if(&$par){
+function _if($par){
 $result='';
 $if_index=1;
 $if_last=count((isset($par['data'])?$par['data']:""));
-$loop1_array=self::ps($par['data']);
-if (is_array($loop1_array) && !empty($loop1_array)){
+@$loop1_array=self::ps($par['data']);
+if ((is_array($loop1_array) && !empty($loop1_array))
+||($loop1_array instanceof Traversable)){
 foreach($loop1_array as $d){
 
 if( (($if_index)==(1)) ) {
@@ -324,7 +329,7 @@ $if_index=(($if_index)+(1));
     return $result;
 }
 
-function _ (&$par){
+function _ ($par){
 $result=($this->_class($par))
     .($this->_callmacro($par))
     .($this->_callmacroex($par))

@@ -10,8 +10,8 @@
 {%- block class -%}
 <?php
 /**
- * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything, 
- * for your changes can be lost at any time.  
+ * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything,
+ * for your changes can be lost at any time.
  */
 {# ## don't need includes any more
 {% if extends %}
@@ -65,7 +65,7 @@ $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p
 ## представление тега FOR
 ##
 {%- block for -%}
-$loop{{loopdepth}}_array=ps({{in}});
+@$loop{{loopdepth}}_array=self::ps({{in}});
 {% if loop_index -%}
 $loop{{loopdepth}}_index=0;
 {% endif%}
@@ -78,7 +78,8 @@ $loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
 {% if loop_cycle -%}
 $loop{{loopdepth}}_cycle={{loop_cycle}};
 {% endif%}
-if (is_array($loop{{loopdepth}}_array) && !empty($loop{{loopdepth}}_array)){
+if ((is_array($loop{{loopdepth}}_array) && !empty($loop{{loopdepth}}_array))
+||($loop{{loopdepth}}_array instanceof Traversable)){
 foreach($loop{{loopdepth}}_array as {{index}}
 {%if  index2 %} =>{{index2}} {% endif %}){
 
@@ -111,11 +112,11 @@ $this->_{{x}}($par)
 {%- block block -%}
 {% if name %}
 {% if tag=='macros' %}
-function _{{name}}(&$namedpar
+function _{{name}}($namedpar
 {%- for p in param %},${{p.name}}{%if p.value%}={{p.value}}{% else %}=0{%endif%}{% endfor -%}){
 extract($namedpar);             {#- #}
 {% else %}
-function _{{name}}(&$par){
+function _{{name}}($par){
 {% endif %}
 {% endif %}
 {% for blk in data%}
