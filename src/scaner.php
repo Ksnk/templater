@@ -32,13 +32,13 @@ class scaner
     private $tail = '';
 
     /** @var boolean - признак успешности только что вызванной функции scan */
-    var $found = false;
+    var $found = false,
+
+        $filestart = 0;
 
     /** @var integer */
     private
         $result,
-
-        $filestart = 0,
 
         $till = -1,
 
@@ -127,7 +127,7 @@ class scaner
     /**
      * дочитываем буфер, если надо
      * @param bool $force - проверять граничный размер
-     * @return bool - последний ли это препаре или нет todo: непонятно накой такой результат нужен
+     * @return bool - последний ли это препаре или нет
      */
     protected function prepare($force = true)
     {
@@ -223,6 +223,34 @@ class scaner
         return $this;
     }
 
+    function regit($reg)
+    {
+        $this->prepare(false);
+
+        do {
+            $found = preg_match($reg, $this->buf, $m, PREG_OFFSET_CAPTURE, $this->start);
+            if (!$found && !empty($this->handle) && !feof($this->handle)) {
+                $x = strrpos($this->buf, "\n");
+                if (false === $x) {
+                    $this->start = strlen($this->buf);
+                } else {
+                    $this->start = $x;
+                }
+                if ($this->prepare()) {
+                    continue;
+                } else {
+                    break;
+                }
+            } else {
+                $this->start=$m[0][1]+strlen($m[0][0]);
+                break;
+            }
+        } while (true);
+        if(!$found)
+            return false;
+        else
+            return $m;
+    }
     /**
      * scan buffer till pattern not found
      * @param $reg
@@ -235,7 +263,7 @@ class scaner
         do {
             $this->found = false;
 
-            if ($reg{0} == '/' || $reg{0} == '~') { // so it's a regular expresion
+            if ($reg{0} == '/' || $reg{0} == '~' ) { // so it's a regular expresion
                 $res = preg_match($reg, $this->buf, $m, PREG_OFFSET_CAPTURE, $this->start);
                 if ($res) {
                     if ($this->till <= 0 || $this->finish < $this->till)
@@ -406,20 +434,32 @@ class scaner
             $till = $this->till;
         }
         $this->prepare(false);
-        while (preg_match($pattern, $this->buf, $m, PREG_OFFSET_CAPTURE, $this->start)) {
-            if ($this->filestart + $m[0][1] + strlen($m[0][0]) > $till) {
-                break;
-            }
-            $skiped = substr($this->buf, $this->start, $m[0][1] - $this->start);
-            $this->start = $m[0][1] + strlen($m[0][0]);
-            $r = array('_skiped' => trim($skiped));
-            foreach ($idx as $i => $v) {
-                if (isset($m[$i]) && !empty($i)) {
-                    $r[$idx[$i]] = trim($m[$i][0], "\n\r ");
+        while(true) {
+            $skiped='';
+            while ($found=preg_match($pattern, $this->buf, $m, PREG_OFFSET_CAPTURE, $this->start)) {
+                $skiped = substr($this->buf, $this->start, $m[0][1] - $this->start);
+                $this->start = $m[0][1] + strlen($m[0][0]);
+                if ($this->filestart + $this->start > $till) {
+                    $this->start=$m[0][1]; // не терять тег на границе буфера todo: oppa! строка то фиксированной длниы?
+                    break;
                 }
+                $r = array('_skiped' => $skiped);
+                $skiped='';
+                foreach ($idx as $i => $v) {
+                    if (isset($m[$i]) && !empty($i)) {
+                        $r[$idx[$i]] = trim($m[$i][0], "\n\r ");
+                    }
+                }
+                if (false === $callback($r)) break 2;
             }
-            if (false === $callback($r)) break;
-            $this->prepare(false);
+            if(''!=$skiped){
+                if (false === $callback(array('_skiped' => $skiped))) break;
+            } else if(!$found){
+                $skiped = substr($this->buf, $this->start);
+                $this->start=strlen($this->buf);
+                if (false === $callback(array('_skiped' => $skiped))) break;
+            }
+            if(!$this->prepare(false)) break;
         }
         $this->position($till);
     }

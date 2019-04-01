@@ -405,14 +405,24 @@ class tpl_parser
      * Здесь и только здесь определяется внешний вид оформления тегов шаблонизатора;
      * регулярные пляски тоже только здесь
      * @param $script
-     * @throws CompilationException
      */
     function makelex($script)
     {
         $curptr = 0;
-        $scaner=new scaner();
-        $scaner->newbuf($script);
+        $scaner = new scaner();
+        if (strlen($script) < 60 && is_readable($script)){
+            $scaner->newhandle($script);
+        } else {
+            $scaner->newbuf($script);
+            // привязываем номер строки к позиции транслятора
+            $this->scanNl($script);
+        }
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
+        $types = array();
+        $triml=false;
+
+        // забираем лексемную регулярку
+        $reg = $this->get_reg($types);
         // добираемся уже внутри колбяка
         $scaner->syntax([
             'cline' => preg_quote($this->options['COMMENT_LINE']),
@@ -423,8 +433,8 @@ class tpl_parser
             'start_1' => ':start_0:|:bstart:',
             'trim' => preg_quote('-'),
         ], '~:start_1::trim:?~sm',
-            function ($line) use (&$curptr, &$scaner) {
-                print_r($line);
+            function ($line) use (&$curptr, &$scaner, $reg, $types,&$triml) {
+               // print_r($line);
                 if(!empty($line['cline'])) {
                     $scaner->scan('~(.*?)\r?\n~i');
                     return;
@@ -432,8 +442,9 @@ class tpl_parser
                     $scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
                     return;
                 }
-                if (!empty($line['trim'])) {
-                    $line['_skiped'] = preg_replace('/\s+$/s', '', $line['_skiped']);
+                if($triml && !empty($line['_skiped'])) {
+                    $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
+                    if($line['_skiped']!='') $triml=false;
                 }
                 if(!empty($line['bstart']) && $this->isOption('COMPRESS_START_BLOCK')) {
                     $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
@@ -441,143 +452,75 @@ class tpl_parser
                 if(!empty($line['_skiped'])) {
                     $pos=$scaner->getpos();
                     $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
+                    if(!empty($line['trim'])) {
+                        $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                        $line['trim']=false;
+                    }
                     $this->lex[] = $this->oper($line['_skiped'], self::TYPE_STRING, $pos);
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
                     $line['_skiped']='';
                 }
+                /*if(!empty($line['trim'])) {
+                    $this->lex[] = $this->oper('_trimr_', self::TYPE_OPERATION, $scaner->getpos());
+                    $line['trim']=false;
+                }*/
 
+// отрезаем следующую лексему шаблонизатора
+                if(!empty($line['xstart']) || !empty($line['bstart'])) {
+                    $triml=false;
+                    $first = true;
+                    while ($m = $scaner->regit($reg)) {
+                        $pos = $scaner->filestart+$m[0][1];
+                        if (!empty($m[1][0])) {
+                            $op = $this->oper(stripslashes($m[2][0]), self::TYPE_STRING, $pos);
+                            if ($m[1][0] == "'")
+                                $op->type = self::TYPE_STRING1;
+                            elseif ($m[1][0] == "`")
+                                $op->type = self::TYPE_STRING2;
+
+                            $this->lex[] = $op;
+                        } else {
+                            for ($x = count($types) - 1; $x > 2; $x--) {
+                                if (isset($m[$x]) && $m[$x][0] != "") {
+                                    if ($types[$x] == self::TYPE_COMMA && strlen($m[$x][0]) > 1) {
+                                        if ($m[$x][0]{0} == '-') {
+                                            $triml=true;
+                                            $m[$x] = substr($m[$x][0], 1);
+                                        }
+                                        $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
+                                        break 2;
+                                    }
+                                    $op = $this->oper(strtolower($m[$x][0]), $types[$x], $pos);
+                                    $op->orig = $m[$x][0];
+                                    $this->lex[] = $op;
+
+                                    // разбираемся с тегом RAW
+                                    if ($first && $m[$x][0] == 'raw') {
+                                        if(!$x=$scaner->regit('~.*?'
+                                            . preg_quote($this->options['BLOCK_END'], '#~')
+                                            . '(.*?)'
+                                            . preg_quote($this->options['BLOCK_START'], '#~')
+                                            . '\s*endraw\s*'
+                                            . preg_quote($this->options['BLOCK_END'], '#~')
+                                            . '~si'
+                                        ))
+                                            $this->error('endraw missed');
+
+                                        array_pop($this->lex);
+                                        array_pop($this->lex);
+                                        $this->lex[] = $this->oper($x[1][0], self::TYPE_STRING, $curptr);
+                                        break 2;
+                                    } else
+                                        break;
+                                }
+                            }
+                        }
+                        $first = false;
+                    }
+                }
             }
         );
 
-        $this->script = $script;
-        $this->operand = array();
-        $this->operation = array();
-        $this->lex = array();
-        $this->curlex = 0;
-        $types = array();
-
-        // привязываем номер строки к позиции транслятора
-        $this->scanNl($script);
-
-        // забираем лексемную регулярку
-        $reg = $this->get_reg($types);
-        $reg0 = "~(.*?)(";
-        foreach (array('COMMENT_LINE', 'VARIABLE_START', 'COMMENT_START') as $r)
-            $reg0 .= preg_quote($this->options[$r], '#~') . '|';
-        $reg0 .= preg_quote($this->options['BLOCK_START'], '#~') . '|$)(\-?)~si';
-
-        $total = strlen($script);
-
-        $triml = false;
-        $strcns = '';
-        // найти начало следующего тега шаблонизатора
-        while ($curptr < $total && preg_match($reg0, $script, $m, 0, $curptr)) {
-            if ($m[0] == '')
-                break; // что-то незаладилось в реге
-            $strcns .= $m[1];
-            if (!empty($strcns)) {
-                if ($m[3] == '-') {
-                    $strcns = preg_replace('/\s+$/s', '', $strcns);
-                } else if ($m[2] == $this->options['BLOCK_START'] && $this->isOption('COMPRESS_START_BLOCK')) {
-                    $strcns = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $strcns);
-                }
-            }
-
-            if ($triml) {
-                $strcns = preg_replace('/^\s+/s', '', $strcns);
-                $triml = false;
-            }
-
-            if ($m[1] !== '') {
-                if ($m[2] != $this->options['COMMENT_LINE'] && $m[2] != $this->options['COMMENT_START']) {
-                    $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $curptr);
-                    $this->lex[] = $this->oper($strcns, self::TYPE_STRING, $curptr);
-                    $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
-                    $strcns = '';
-                } else {
-                    $strcns=preg_replace('/\s\s+$/m'," ",$strcns);
-                }
-            }
-
-            $curptr += strlen($m[0]);
-
-            if ($m[2] == "") break; // нашли финальный кусок
-
-            if ($m[2] == $this->options['COMMENT_LINE']) { // комментарий на всю линию
-                if (preg_match('~(.*?)\r?\n~i', $script, $mm, 0, $curptr)) {
-                    $curptr += strlen($mm[1]);
-                    continue;
-                }
-            } elseif ($m[2] == $this->options['COMMENT_START']) { // комментарий? - ищем пару и продолжаем цирк
-                //$rreg='~.*?'.preg_quote($this->options['COMMENT_END'],'#~').'~si';
-                if (preg_match('~.*?' . preg_quote($this->options['COMMENT_END'], '#~') . '~si', $script, $m, 0, $curptr)) {
-                    $curptr += strlen($m[0]);
-                    continue;
-                }
-            } else {
-                if ($m[2] != $this->options['BLOCK_START']) {
-                    $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $curptr);
-                    //   $this->lex[] = $this->oper('(', self::TYPE_COMMA, $curptr);
-                }
-            }
-
-            // отрезаем следующую лексему шаблонизатора
-            $first = true;
-            while ($curptr < $total && preg_match($reg, $script, $m, 0, $curptr)) {
-                $pos = $curptr;
-                $curptr += strlen($m[0]);
-                if (!empty($m[1])) {
-                    $op = $this->oper(stripslashes($m[2]), self::TYPE_STRING, $pos);
-                    if ($m[1] == "'")
-                        $op->type = self::TYPE_STRING1;
-                    elseif ($m[1] == "`")
-                        $op->type = self::TYPE_STRING2;
-
-                    $this->lex[] = $op;
-                } else {
-                    for ($x = count($types) - 1; $x > 2; $x--) {
-                        if (isset($m[$x]) && $m[$x] != "") {
-                            if ($types[$x] == self::TYPE_COMMA && strlen($m[$x]) > 1) {
-                                if ($m[$x]{0} == '-') {
-                                    $triml = true;
-                                    $m[$x] = substr($m[$x], 1);
-                                }
-                                //if ($m[$x] == $this->options['VARIABLE_END']) {
-                                    // $this->lex[] = $this->oper(')', self::TYPE_COMMA, $curptr);
-                                //}
-                                $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
-                                break 2;
-                            }
-                            $op = $this->oper(strtolower($m[$x]), $types[$x], $pos);
-                            $op->orig = $m[$x];
-                            $this->lex[] = $op;
-
-                            // разбираемся с тегом RAW
-                            if ($first && $m[$x] == 'raw') {
-                                // ищем закрывающий тег raw
-                                if (!preg_match('~.*?'
-                                        . preg_quote($this->options['BLOCK_END'], '#~')
-                                        . '(.*?)'
-                                        . preg_quote($this->options['BLOCK_START'], '#~')
-                                        . '\s*endraw\s*'
-                                        . preg_quote($this->options['BLOCK_END'], '#~')
-                                        . '~si',
-                                    $script, $m, 0, $curptr)
-                                )
-                                    $this->error('endraw missed');
-                                $curptr += strlen($m[0]);
-                                array_pop($this->lex);
-                                array_pop($this->lex);
-                                $this->lex[] = $this->oper($m[1], self::TYPE_STRING, $curptr);
-                                break 2;
-                            } else
-                                break;
-                        }
-                    }
-                }
-                $first = false;
-            }
-        }
         $this->lex[] = $this->oper("\x1b", self::TYPE_EOF, $curptr);
     }
 
@@ -1346,27 +1289,13 @@ class tpl_parser
         }
     }
 
-    /*	protected function get_Comma_separated_list(){
-         $depth=count($this->operand);
-         do {
-             $this->getExpression();
-             $this->getNext();
-             if($this->op->val==',') {
-                 //$this->newop(',');
-             } else {
-                 $this->back();
-                 break;
-             }
-         } while(true);
-         return count($this->operand)-$depth;
-     }*/
     /**
      * список параметров через запятую, с именами, разделенных = или :
      * Возвращает асссоциативный массив
      */
     protected function get_Parameters_list($sign = ':')
     {
-        $depth = count($this->operand);
+        //$depth = count($this->operand); //todo - проверить таки глубину
         $arr = array();
         $keys = array();
         if (!empty($this->storeparams)) {
@@ -1484,8 +1413,8 @@ class tpl_parser
             }
         } else if ($last->unop && isset($this->unop[$last->val])) {
             if (is_string($this->unop[$last->val]->val)) {
-                $op = $this->popOp();
                 $opr = $this->unop[$last->val];
+                $op = $this->popOp();
                 $this->pushOp(sprintf($this->unop[$last->val]->val
                     , $this->to(array($opr->types{1}, 'value'), $op)), $opr->types{0});
             } else {

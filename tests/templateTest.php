@@ -49,7 +49,7 @@ class templateTest extends TestCase
     /**
      * тестирование шаблона с генерацией нового класса
      */
-    function _test_cmpl($tpl, $data, $show = false,$macro='_')
+    function _test_cmpl($tpl, $data=array(), $show = false,$macro='_')
     {
         static $classnumber = 10;
         while(class_exists('tpl_test' . $classnumber, false))
@@ -67,7 +67,7 @@ class templateTest extends TestCase
         return $x;
     }
 
-    /** test extends-parent  */
+        /** test extends-parent  */
     function test_test27()
     {
         $s = '##
@@ -219,7 +219,7 @@ class templateTest extends TestCase
         );
     }
 
-
+/*
     function test_test1()
     {
         $data = array('if' => "'hello'", 'then' => 'world');
@@ -229,7 +229,7 @@ class templateTest extends TestCase
             'if( \'hello\' ){ world };'
         );
     }
-
+*/
     function test_test10()
     {
         $data = array();

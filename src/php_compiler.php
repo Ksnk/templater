@@ -83,6 +83,7 @@ class php_compiler extends tpl_parser
             ->newFunc('russuf', '$this->func_russuf(%s)')
             ->newFunc('reg', '$this->func_reg(%s)')
             ->newFunc('in_array', '$this->func_in_array(%s)')
+            ->newFunc('in_array', '$this->func_in_array(%s)')
             ->newFunc('is_array', '$this->func_is_array(%s)')
            // ->newFunc('parent', 'parent::_styles(%s)')
             ->newFunc('parent', array($this, 'function_parent'))
@@ -94,7 +95,7 @@ class php_compiler extends tpl_parser
     /**
      * @param $msgId
      * @param object|null $lex
-     * @throws Exception
+     * @throws CompilationException
      */
     function error($msgId, $lex = null)
     {
@@ -116,7 +117,7 @@ class php_compiler extends tpl_parser
                 , self::$filename
                 , $line + 1, pps($lex->pos, -1) - $lexpos, pps($lex->val, -1));
         }
-        throw new Exception($mess);
+        throw new CompilationException($mess);
     }
 
     /**
@@ -124,7 +125,7 @@ class php_compiler extends tpl_parser
      * @param array $types - массив с именами типов для конвертирвоания
      * @param operand $res - операнд
      * @return operand
-     * @throws Exception
+     * @throws CompilationException
      */
     function to($types, &$res)
     {
@@ -311,7 +312,7 @@ class php_compiler extends tpl_parser
      * @param operand $op1 - TYPE_ID - имя функции
      * @param operand $op2 - TYPE_LIST - параметры функции
      * @return operand
-     * @throws Exception
+     * @throws CompilationException
      */
     function function_parent($op1,$op2)
     {

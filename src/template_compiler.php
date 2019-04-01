@@ -50,7 +50,7 @@ class template_compiler
         try {
             $calc->makelex($tpl);
             $result = $calc->tplcalc($name);
-        } catch (Exception $e) {
+        } catch (CompilationException $e) {
             echo $e->getMessage();
             //echo '<pre> filename:'.self::$filename.'<br>';print_r($calc);echo'</pre>';
             return null;
