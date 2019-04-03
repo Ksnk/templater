@@ -101,7 +101,7 @@ class tag_for
      * @param tpl_parser $parcer
      * @throws CompilationException
      */
-    function execute($parcer)
+    function execute($parcer, $pos=0)
     {
         // парсинг тега for
         // полная форма:
@@ -114,7 +114,12 @@ class tag_for
         );
         $parcer->opensentence[] = &$this->tag;
         $parcer->getExpression(); // получили имя идентификатора
-        $id = $parcer->newId($parcer->popOp());
+        // elseif (empty($op)) {
+        // $this->error('improper FOR declaration');
+        if (count($parcer->operand) <= 0) {
+            $parcer->error('improper FOR declaration');
+        } else
+            $id = $parcer->newId($parcer->popOp());
         $this->tag['index'] = $parcer->to(array('I', 'value'), $id);
         //
         if ($parcer->op->val == ',') { // key-value pair selected

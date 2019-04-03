@@ -173,7 +173,12 @@ class tpl_parser
         /**
          * текущая операция
          */
-        $op = null;
+        $op = null,
+
+        /**
+         * @var scaner
+         */
+        $scaner = null;
 
 
     function __construct()
@@ -408,14 +413,11 @@ class tpl_parser
      */
     function makelex($script)
     {
-        $curptr = 0;
-        $scaner = new scaner();
+        $this->scaner = new scaner();
         if (strlen($script) < 60 && is_readable($script)){
-            $scaner->newhandle($script);
+            $this->scaner->newhandle($script);
         } else {
-            $scaner->newbuf($script);
-            // привязываем номер строки к позиции транслятора
-            $this->scanNl($script);
+            $this->scaner->newbuf($script);
         }
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
         $types = array();
@@ -424,7 +426,7 @@ class tpl_parser
         // забираем лексемную регулярку
         $reg = $this->get_reg($types);
         // добираемся уже внутри колбяка
-        $scaner->syntax([
+        $this->scaner->syntax([
             'cline' => preg_quote($this->options['COMMENT_LINE']),
             'xstart' => preg_quote($this->options['VARIABLE_START']),
             'cstart' => preg_quote($this->options['COMMENT_START']),
@@ -433,13 +435,13 @@ class tpl_parser
             'start_1' => ':start_0:|:bstart:',
             'trim' => preg_quote('-'),
         ], '~:start_1::trim:?~sm',
-            function ($line) use (&$curptr, &$scaner, $reg, $types,&$triml) {
+            function ($line) use ($reg, $types,&$triml) {
                // print_r($line);
                 if(!empty($line['cline'])) {
-                    $scaner->scan('~(.*?)\r?\n~i');
+                    $this->scaner->scan('~(.*?)\r?\n~i');
                     return;
                 } else if(!empty($line['cstart'])) {
-                    $scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
+                    $this->scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
                     return;
                 }
                 if($triml && !empty($line['_skiped'])) {
@@ -450,7 +452,7 @@ class tpl_parser
                     $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
                 }
                 if(!empty($line['_skiped'])) {
-                    $pos=$scaner->getpos();
+                    $pos=$this->scaner->getpos();
                     $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
                     if(!empty($line['trim'])) {
                         $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
@@ -461,7 +463,7 @@ class tpl_parser
                     $line['_skiped']='';
                 }
                 /*if(!empty($line['trim'])) {
-                    $this->lex[] = $this->oper('_trimr_', self::TYPE_OPERATION, $scaner->getpos());
+                    $this->lex[] = $this->oper('_trimr_', self::TYPE_OPERATION, $this->scaner->getpos());
                     $line['trim']=false;
                 }*/
 
@@ -469,8 +471,8 @@ class tpl_parser
                 if(!empty($line['xstart']) || !empty($line['bstart'])) {
                     $triml=false;
                     $first = true;
-                    while ($m = $scaner->regit($reg)) {
-                        $pos = $scaner->filestart+$m[0][1];
+                    while ($m = $this->scaner->regit($reg)) {
+                        $pos = $this->scaner->filestart+$m[0][1];
                         if (!empty($m[1][0])) {
                             $op = $this->oper(stripslashes($m[2][0]), self::TYPE_STRING, $pos);
                             if ($m[1][0] == "'")
@@ -487,7 +489,7 @@ class tpl_parser
                                             $triml=true;
                                             $m[$x] = substr($m[$x][0], 1);
                                         }
-                                        $this->lex[] = $this->oper('', self::TYPE_COMMA, $curptr);
+                                        $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
                                         break 2;
                                     }
                                     $op = $this->oper(strtolower($m[$x][0]), $types[$x], $pos);
@@ -496,7 +498,7 @@ class tpl_parser
 
                                     // разбираемся с тегом RAW
                                     if ($first && $m[$x][0] == 'raw') {
-                                        if(!$x=$scaner->regit('~.*?'
+                                        if(!$x=$this->scaner->regit('~.*?'
                                             . preg_quote($this->options['BLOCK_END'], '#~')
                                             . '(.*?)'
                                             . preg_quote($this->options['BLOCK_START'], '#~')
@@ -508,7 +510,7 @@ class tpl_parser
 
                                         array_pop($this->lex);
                                         array_pop($this->lex);
-                                        $this->lex[] = $this->oper($x[1][0], self::TYPE_STRING, $curptr);
+                                        $this->lex[] = $this->oper($x[1][0], self::TYPE_STRING, $pos);
                                         break 2;
                                     } else
                                         break;
@@ -521,16 +523,17 @@ class tpl_parser
             }
         );
 
-        $this->lex[] = $this->oper("\x1b", self::TYPE_EOF, $curptr);
+        $this->lex[] = $this->oper("\x1b", self::TYPE_EOF, $this->scaner->getpos());
     }
 
     function newId($op)
     {
         // установить ID как новый идентификатор
-        if (is_string($op))
+        if (is_string($op)) {
             $this->locals[] = $op;
-        else
+        } else {
             $this->locals[] = $op->val;
+        }
         return $op;
     }
 
@@ -814,7 +817,7 @@ class tpl_parser
     {
         static $tpl_compiler;
         if (!is_null($tpl_class) || empty($tpl_compiler)) {
-            $tpl_compiler = 'tpl_' . pps($tpl_class, 'compiler');
+            $tpl_compiler = 'tpl_' . \tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {
                 // попытка включить файл
                 include_once (template_compiler::options('templates_dir') . $tpl_compiler . '.php');
@@ -1039,7 +1042,7 @@ class tpl_parser
      */
     function &newOp1($op, $phpeq = null, $types = '*')
     {
-        return $this->new_Op($op, 10, $this->unop, pps($phpeq, '(~~~(%s))'), $types);
+        return $this->new_Op($op, 10, $this->unop, \tpl_base::pps($phpeq, '(~~~(%s))'), $types);
     }
 
     /**
@@ -1052,7 +1055,7 @@ class tpl_parser
      */
     function &newOpS($op, $phpeq = null, $prio = 10, $types = '*')
     {
-        return $this->new_Op($op, $prio, $this->suffop, pps($phpeq, '(%s~~~)'), $types);
+        return $this->new_Op($op, $prio, $this->suffop, \tpl_base::pps($phpeq, '(%s~~~)'), $types);
     }
 
     /**
@@ -1084,19 +1087,7 @@ class tpl_parser
      */
     function &newOp2($op, $prio = 10, $phpeq = null, $types = '*')
     {
-        return $this->new_Op($op, $prio, $this->binop, pps($phpeq, '((%s)~~~(%s))'), $types);
-    }
-
-    /**
-     * сканирование скрипта для определения начал строк
-     * @param string $script
-     */
-    protected function scanNl(&$script)
-    {
-        preg_match_all('/$/m', $script, $m, PREG_OFFSET_CAPTURE);
-        foreach ($m[0] as $k => $v) {
-            $this->lines[$v[1]] = $k;
-        }
+        return $this->new_Op($op, $prio, $this->binop, \tpl_base::pps($phpeq, '((%s)~~~(%s))'), $types);
     }
 
     /**
@@ -1107,12 +1098,12 @@ class tpl_parser
      */
     public function error($msgId, $lex = null)
     {
-        $mess = pps($this->error_msg[$msgId], $msgId);
+        $mess = \tpl_base::pps($this->error_msg[$msgId], $msgId);
         if (is_null($lex)) {
             $lex = $this->op;
         }
         if (!is_null($lex)) {
-            $mess .= sprintf(' pos:%s lex:"%s"', pps($lex->pos, -1), pps($lex->val, -1));
+            $mess .= sprintf(' pos:%s lex:"%s"', \tpl_base::pps($lex->pos, -1), \tpl_base::pps($lex->val, -1));
         }
         throw new CompilationException($mess);
     }

@@ -11,6 +11,8 @@
 
 namespace Ksnk\templater ;
 
+use \Ksnk\templater\php_compiler;
+
 class template_compiler
 {
 
@@ -75,7 +77,7 @@ class template_compiler
         $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
 
         if (!class_exists('tpl_base'))
-            include_once (template_compiler::options('templates_dir') . 'tpl_base.php');
+            include_once (self::options('templates_dir') . DIRECTORY_SEPARATOR . 'tpl_base.php');
         //$time = microtime(true);
         $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
@@ -86,12 +88,12 @@ class template_compiler
                 $name = basename($v, "." . $ext);
                 $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
                 if (
-                    ''!=empty(self::options('FORCE'))
+                    ''!=self::options('FORCE')
                     || !file_exists($phpn)
                     || (max($xtime, filemtime($v)) > filemtime($phpn))
                 ) {
                     php_compiler::$filename = $v;
-                    $x = self::compile_tpl(file_get_contents($v), $name);
+                    $x = self::compile_tpl($v, $name);
                     if (!!$x)
                         file_put_contents($phpn, $x);
                 }
