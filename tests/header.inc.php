@@ -11,6 +11,8 @@ ini_get('include_path')
 function autoload($x){
     if(is_file($x.'.php'))
         include($x.'.php');
+    elseif(is_file('../'.$x.'.php'))
+        include('../'.$x.'.php');
     elseif(is_file('../templates/'.$x.'.php'))
         include('../templates/'.$x.'.php');
     elseif(is_file(SYSTEM_PATH.'/../render/'.$x.'.php'))
@@ -19,7 +21,7 @@ function autoload($x){
 
 spl_autoload_register('autoload');
 //  echo 'getcwd-'.getcwd();
-require_once(SYSTEM_PATH.'/nat2php.class.php');
-require_once(SYSTEM_PATH.'/compiler.class.php');
-require_once(SYSTEM_PATH.'/template_parser.class.php');
-require_once(SYSTEM_PATH.'/compiler.php.php');
+//require_once(SYSTEM_PATH.'/nat2php.class.php');
+//require_once(SYSTEM_PATH.'/compiler.class.php');
+//require_once(SYSTEM_PATH.'/template_parser.class.php');
+//require_once(SYSTEM_PATH.'/compiler.php.php');

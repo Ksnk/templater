@@ -1,9 +1,8 @@
 <?php
 
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    ini_set('include_path', ini_get('include_path') . PATH_SEPARATOR . dirname(dirname(__FILE__)));
-    require 'PHPUnit/Autoload.php';
-}
+include_once '../vendor/autoload.php';
+
+use PHPUnit\Framework\TestCase;
 
 include_once 'header.inc.php';
 
@@ -23,27 +22,29 @@ class engine
 
 $GLOBALS['engine'] = new engine();
 
-class Test_Templater extends PHPUnit_Framework_TestCase {
-	
+class Test_Templater extends TestCase {
+
 	var $this_template='../templates/compiler.jtpl';
 
 	function compile_it($class_name='compiler'){
 		static $compiler;
 		if(empty($compiler))
-			$compiler=new template_compiler();
-		if(!class_exists('tpl_'.$class_name)){
+			$compiler=new \Ksnk\templater\template_compiler();
+		if(!class_exists($t='tpl_'.$class_name, false)){
 			if(is_file($this->this_template)){
 				$x=$compiler->compile_tpl(file_get_contents($this->this_template),$class_name);
-				echo'<pre>'.htmlspecialchars($x).'</pre>';
-				eval('?>'.$x);
+                file_put_contents($t.'.php',str_replace('class tpl_test extends','class '.$t.' extends',$x));
+                include($t.'.php');
+
+                echo'<pre>'.htmlspecialchars($x).'</pre>';
 				return $x;
 			}
 		}
 		return '';
 	}
-	
+
 	// тестируемые данные
-	
+
 	/**
 	 * тестируем оттранслированный шаблон
 	 */
@@ -64,9 +65,3 @@ class Test_Templater extends PHPUnit_Framework_TestCase {
 		);
 	}
 }
-
-if (!defined('PHPUnit_MAIN_METHOD')) {
-    $suite = new PHPUnit_Framework_TestSuite('Test_Templater');
-    PHPUnit_TextUI_TestRunner::run($suite);
-}
-?>

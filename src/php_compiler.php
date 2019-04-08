@@ -8,6 +8,9 @@
 
 %>
  */
+
+namespace Ksnk\templater ;
+
 class php_compiler extends tpl_parser
 {
 
@@ -27,52 +30,78 @@ class php_compiler extends tpl_parser
             ->newOp2('is', 11, array($this, 'function_filter'), 11)
             ->newOp2('== != > >= < <=', 2, null, 'B**')
             ->newOp2('and', 1, '(%s) && (%s)', 'BBB')
+            ->newOp2('&&', 1, '(%s) && (%s)', 'BBB')
             ->newOp2('or', 1, '(%s) || (%s)', 'BBB')
+            ->newOp2('||', 1, '(%s) || (%s)', 'BBB')
             ->newOp2('~', 2, '(%s).(%s)', 'SSS')
             ->newOp1('not', '!(%s)', 'BB')
-            ->newOp2('& << >>', 3)
+            ->newOp2('&', 3, '$this->_int(%s)& $this->_int(%s)', '*DD')
+            ->newOp2('<< >>', 3)
         // однопараметровые фильтры
         // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
         //->newOpR('loop', array($this, 'operand_loop'))
             ->newOpR('self', 'self', self::TYPE_XID)
             ->newOpR('_self', 'self', self::TYPE_XID)
+            ->newOpR('true', 'true', self::TYPE_XBOOLEAN)
+            ->newOpR('false', 'false', self::TYPE_XBOOLEAN)
             ->newOp1('now', 'date(%s)')
         // фильтры и тесты
             ->newFunc('e', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('raw', '%s', 'SS')
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('replace', array($this, 'function_replace'), 'SSSS')
+            ->newFunc('is_dir', 'is_dir(%s)', 'SI')
             ->newFunc('length', 'count(%s)', 'DI')
             ->newFunc('lipsum', '$this->func_lipsum(%s)')
+            ->newFunc('round', 'round(%s)')
             ->newFunc('min')
             ->newFunc('max')
             ->newFunc('trim')
             ->newFunc('join', '$this->filter_join(%s)')
+            ->newFunc('repeat', '$this->func_repeat(%s)')
+            ->newFunc('json_encode', '$this->func_json_encode(%s)')
+            ->newFunc('explode', 'explode(%s)')
+            ->newFunc('price', 'number_format(%s,0,"."," ")')
             ->newFunc('default', '$this->filter_default(%s)')
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
             ->newFunc('slice', '$this->func_slice(%s)')
             ->newFunc('range', '$this->func_range(%s)')
             ->newFunc('keys', '$this->func_keys(%s)')
             ->newFunc('callex', '$this->callex(%s)')
+            ->newFunc('attribute', '$this->attr(%s)')
             ->newFunc('call', '$this->call($par,%s)')
             ->newFunc('translit', 'translit(%s)')
+            ->newFunc('shortcode', '$this->shortcode(%s)')
             ->newFunc('format', 'sprintf(%s)')
+            ->newFunc('setarray', '$this->func_setarray(%s)')
+            ->newFunc('link', '$this->func_enginelink(%s)')
+            ->newFunc('fileurl','$this->func_fileurl(%s)')
             ->newFunc('truncate', '$this->func_truncate(%s)')
+            ->newFunc('tourl', '$this->func_2url(%s)')
             ->newFunc('date', '$this->func_date(%s)')
             ->newFunc('finnumb', '$this->func_finnumb(%s)')
             ->newFunc('right', '$this->func_rights(%s)')
             ->newFunc('russuf', '$this->func_russuf(%s)')
+            ->newFunc('reg', '$this->func_reg(%s)')
             ->newFunc('in_array', '$this->func_in_array(%s)')
+            ->newFunc('in_array', '$this->func_in_array(%s)')
+            ->newFunc('is_array', '$this->func_is_array(%s)')
            // ->newFunc('parent', 'parent::_styles(%s)')
             ->newFunc('parent', array($this, 'function_parent'))
+            ->newFunc('debug', '\ENGINE::debug(%s)')
             ->newOp1('_echo_', array($this, '_echo_'));
 
     }
 
+    /**
+     * @param $msgId
+     * @param object|null $lex
+     * @throws CompilationException
+     */
     function error($msgId, $lex = null)
     {
-        $mess = pps($this->error_msg[$msgId], $msgId);
+        $mess = \tpl_base::pps($this->error_msg[$msgId], $msgId);
         if (is_null($lex)) {
             $lex = $this->op;
         }
@@ -80,7 +109,7 @@ class php_compiler extends tpl_parser
             // count a string
             $lexpos = 0;
             $line = 0;
-            foreach ($this->lines as $k => $v) {
+            foreach ($this->scaner->lines as $k => $v) {
                 if ($k >= $lex->pos) break;
                 $lexpos = $k;
                 $line = $v;
@@ -88,16 +117,17 @@ class php_compiler extends tpl_parser
 
             $mess .= sprintf("\n" . 'file: %s<br>line:%s, pos:%s lex:"%s"'
                 , self::$filename
-                , $line + 1, pps($lex->pos, -1) - $lexpos, pps($lex->val, -1));
+                , $line + 1, \tpl_base::pps($lex->pos, -1) - $lexpos, \tpl_base::pps($lex->val, -1));
         }
-        throw new Exception($mess);
+        throw new CompilationException($mess);
     }
 
     /**
      * конвертирование операнда в то или иное состояние
      * @param array $types - массив с именами типов для конвертирвоания
      * @param operand $res - операнд
-     * @see nat2php/parser::to()
+     * @return operand
+     * @throws CompilationException
      */
     function to($types, &$res)
     {
@@ -271,9 +301,9 @@ class php_compiler extends tpl_parser
      */
     function function_replace($op1, $op2)
     {
-        $op1->val = 'str_replace(' . $this->to('S', $op2->value['keys'][1])->val
+        $op1->val = '$this->func_replace(' . $this->to('S', $op2->value['keys'][0])->val
+            . ',' . $this->to('S', $op2->value['keys'][1])->val
             . ',' . $this->to('S', $op2->value['keys'][2])->val
-            . ',' . $this->to('S', $op2->value['keys'][0])->val
             . ')';
         $op1->type = "TYPE_OPERAND";
         return $op1;
@@ -283,6 +313,8 @@ class php_compiler extends tpl_parser
      * фильтр - replace
      * @param operand $op1 - TYPE_ID - имя функции
      * @param operand $op2 - TYPE_LIST - параметры функции
+     * @return operand
+     * @throws CompilationException
      */
     function function_parent($op1,$op2)
     {
@@ -290,6 +322,8 @@ class php_compiler extends tpl_parser
         foreach($op2->value['keys'] as &$v){
             $value[]=$this->to('S', $v)->val ;
         }
+        array_unshift($value,'$par');
+
         $op1->val = 'parent::_'.$this->currentFunction.'('.implode(',',$value).')' ;
         $op1->type = "TYPE_OPERAND";
         return $op1;

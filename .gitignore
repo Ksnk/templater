@@ -1,2 +1,6 @@
-
-/.idea
+/.idea/*
+/vendor/*
+/lapsiBuild/*
+config.*
+*.phar
+*.lock

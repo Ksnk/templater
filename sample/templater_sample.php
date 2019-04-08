@@ -19,11 +19,11 @@ $GLOBALS['engine']=&new engine();
 function pps(&$x,$default=''){if(empty($x))return $default; else return $x;}
 
 	function test_tpl($tpl,$data){
-		$calc=new php_compiler();
-		$calc->makelex($tpl);
 		try {
-			$result=$calc->block_internal();
-			$x='$result="";'.$calc->popOp()->val.' return $result;'; 
+            $calc=new php_compiler();
+            $calc->makelex($tpl);
+            $result=$calc->block_internal();
+			$x='$result="";'.$calc->popOp()->val.' return $result;';
 			echo'<pre>'.htmlspecialchars($x).'</pre>';
 			$fnc=create_function('&$par',$x);
 			echo'<pre>'.htmlspecialchars(print_r($calc,true)).'</pre>';
@@ -68,8 +68,8 @@ function pps(&$x,$default=''){if(empty($x))return $default; else return $x;}
 			return 'XXX';
 		}
 	}
-	
-//*	
+
+//*
 $data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
  $data=array('foo'=>array('bar'=>'xxx'));
 		//$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
@@ -77,7 +77,7 @@ $data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
 /**!!!!!!!!!!!!!!!!!!! не работает!!!!!!!!!!!!!!!!!! */
 $s='{%if not user.right["*"] %}*{%endif%}
 {%if not right["*"] %}*{%endif%}
-{%if not right[1] %}*{%endif%}';	  
+{%if not right[1] %}*{%endif%}';
 		/**!!!!!!!!!!!!!!!!!!!  ошибка трансляции split - макра!!!!!!!!!!!!!!!!!! */
 	$s=	'{% for column in list|split(columns) %}
 {% for l in column %}
@@ -95,10 +95,10 @@ $s='{%if not user.right["*"] %}*{%endif%}
 </table>#}
 
 {% endfor %}
-{% endfor %}'  ;    
-/**!!!!!!!!!!!!!!!!!!! вставлять тесты сюда !!!!!!!!!!!!!!!!! */  
+{% endfor %}'  ;
+/**!!!!!!!!!!!!!!!!!!! вставлять тесты сюда !!!!!!!!!!!!!!!!! */
 	echo '<pre>'.htmlspecialchars(test_cmpl($s,$data)).'</pre>';/**/
-	
+
 //_template();
 //echo '<pre>'.htmlspecialchars(test_file('elements.jtpl',array())).'</pre>';/**/
 /*        $data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
