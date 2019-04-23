@@ -48,6 +48,32 @@ class twig_testTest extends TestCase
         }
     }
 
+    function test2ndslice(){
+        $this->_test_tpl(array(
+            'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
+            'data' => array('data'=>array(array('index'=>'xxx'))),
+            'pattern' => '!xxx +xxx'));
+    }
+
+    function test_6(){
+        $this->_test_tpl(array(
+            'index' => '<select class="input" >
+            {% for k,option in field.values %}
+                {% if k!=\'id\' and k!=\'record\' and k!=\'name\' %}
+                <option{% if value==option %} selected{% endif %}>{{ option }}</option>
+                {% endif %}
+            {% endfor %}
+            </select>',
+            'pattern' => '<select class="input" >
+                <option selected>ulli</option>
+                <option>select</option>
+            </select>',
+            'data'=>[
+                'value'=>'ulli',
+                'field'=>['values'=>['text','ulli','select']]
+            ]));
+    }
+
     function test_5()
     {
         $this->_test_tpl(array(
@@ -125,12 +151,6 @@ class twig_testTest extends TestCase
             'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
     }
 
-    function test2ndslice(){
-        $this->_test_tpl(array(
-            'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
-            'data' => array('data'=>array(array('index'=>'xxx'))),
-            'pattern' => '!xxx +xxx'));
-    }
     /*
      *
 function testMacroError(){  // после первого endif пропущено %

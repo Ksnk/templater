@@ -300,13 +300,14 @@ class scaner
                         $till = $this->finish;
                     else
                         $till = $this->till;
-                    if ($this->filestart + $m[0][1] + strlen($m[0][0]) > $till) {
+                    $plen=isset($m['fin'])?$m['fin'][1]:$m[0][1] + strlen($m[0][0]);
+                    if ($this->filestart +$plen > $till) {
                         $this->found = false;
                         break;
                     } else {
                         $this->reg_begin = $this->filestart + $m[0][1];
                         $this->found = true;
-                        $this->start = $m[0][1] + strlen($m[0][0]);
+                        $this->start = $plen;
                         $args = func_get_args();
                         array_shift($args);
                         while (count($args) > 0) {
@@ -448,7 +449,7 @@ class scaner
     function syntax($tokens, $pattern, $callback)
     {
         // so build a reg
-        $idx = array(0);
+        $idx = array(0,'_skiped');
         while (preg_match('/:(\w+):/', $pattern, $m, PREG_OFFSET_CAPTURE)) {
             if (!isset($tokens[$m[1][0]])) break;
             $idx[] = $m[1][0];
@@ -468,7 +469,7 @@ class scaner
             $skiped='';
             while ($found=preg_match($pattern, $this->buf, $m, PREG_OFFSET_CAPTURE, $this->start)) {
                 $skiped = substr($this->buf, $this->start, $m[0][1] - $this->start);
-                $this->start = $m[0][1] + strlen($m[0][0]);
+                $this->start = isset($m['fin'])?$m['fin'][1]:($m[0][1]+strlen($m[0][0]));
                 if ($this->filestart + $this->start > $till) {
                     $this->start=$m[0][1]; // не терять тег на границе буфера todo: oppa! строка то фиксированной длниы?
                     break;
@@ -477,7 +478,10 @@ class scaner
                 $skiped='';
                 foreach ($idx as $i => $v) {
                     if (isset($m[$i]) && !empty($i)) {
-                        $r[$idx[$i]] = trim($m[$i][0], "\n\r ");
+                        if($idx[$i]=='_skiped')
+                            $r[$idx[$i]] = $m[$i][0];
+                        else
+                            $r[$idx[$i]] = trim($m[$i][0], "\n\r ");
                     }
                 }
                 if (false === $callback($r)) break 2;

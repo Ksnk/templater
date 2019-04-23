@@ -414,12 +414,14 @@ class tpl_parser
     function makelex($script)
     {
         $this->scaner = new scaner();
-        if (strlen($script) < 60 && is_readable($script)){
+        if (strlen($script) < 200 && is_readable($script)){
             $this->scaner->newhandle($script);
         } else {
             $this->scaner->newbuf($script);
         }
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
+        $this->lex=[];
+        $this->curlex = 0;
         $types = array();
         $triml=false;
 
@@ -434,11 +436,11 @@ class tpl_parser
             'start_0' => ':cline:|:xstart:|:cstart:',
             'start_1' => ':start_0:|:bstart:',
             'trim' => preg_quote('-'),
-        ], '~:start_1::trim:?~sm',
+        ], '~(.*?):start_1::trim:?(?<fin>)~sm',
             function ($line) use ($reg, $types,&$triml) {
                // print_r($line);
                 if(!empty($line['cline'])) {
-                    $this->scaner->scan('~(.*?)\r?\n~i');
+                    $this->scaner->scan('~(.*?)\r?\n(?<fin>)~i');
                     return;
                 } else if(!empty($line['cstart'])) {
                     $this->scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
