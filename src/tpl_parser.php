@@ -1223,12 +1223,11 @@ class tpl_parser
                     case self::TYPE_OPERATION:
                         if (isset($this->suffop[$this->op->val])) {
                             $this->calc($this->op, 'suff'); // значение уже на стеке - работаем!
-                            continue;
                         } else {
                             $this->calc($this->op);
                             $place = 1;
-                            break;
                         }
+                        break;
                     case self::TYPE_COMMA:
                         if ($this->op->val == '(') {
                             $this->newop('_stack_');

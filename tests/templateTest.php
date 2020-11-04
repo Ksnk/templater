@@ -405,9 +405,9 @@ class templateTest extends TestCase
         $data = array('seq' => array(1, 2, 3, 4, 5, 6, 7, 8, 9));
         //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
         $s = '{#
-        it\'s a test 
-        #} 
-        
+        it\'s a test
+        #}
+
         {% for item in seq -%}
     {{ item }}
 {%- endfor %}';
@@ -438,9 +438,9 @@ class templateTest extends TestCase
         $data = array();
         //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
         $s = '{#
-        it\'s a test 
-        #} 
-        
+        it\'s a test
+        #}
+
         {%- for item in ["on\\\\e\'s ","one\"s "] -%}
     {{ item }}
 {%- endfor %}';
@@ -734,9 +734,9 @@ class templateTest extends TestCase
                     array('id' => 'input', 'required' => true, 'label' => 'Hello world', 'html' => '<input type="text">')
                 )
             )));
-        $s = file_get_contents(dirname(__FILE__) . '/quick.form.tpl');
+        $s = file_get_contents(dirname(__FILE__) . '/quick.form.twig');
 
-        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial,sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
+        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial, sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
         $this->assertEquals(
             $this->compress($this->_test_cmpl($s, $data)), $pattern
         );
@@ -754,6 +754,24 @@ class templateTest extends TestCase
             $this->_test_cmpl($s, $data), $pattern
         );
     }
+
+    /**
+     * неправильно записан цикл. При трансляции выходит лажа
+     * todo: исправить!
+     */
+    function testFor()
+    {
+        $data = array('func' => 'fileman', 'data' => '<<<>>>');
+        $s = '<th>id</th>
+{% for data[0] as name,cell %}{% if name != \'id\' %}
+<th>{{ name }}</th>
+            {% endif %}{% endfor %}';
+        $pattern = '1230 1100 1300 1230';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
 
     /**
      *  2 ошибки.

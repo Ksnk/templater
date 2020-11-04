@@ -1,6 +1,6 @@
 <?php
 
-define('SYSTEM_PATH',dirname(dirname(__FILE__)).'/build/lib');
+define('SYSTEM_PATH', str_replace('\\','/',dirname(dirname(__FILE__))) . '/build/lib');
 /*
 ini_set('include_path',
 ini_get('include_path')

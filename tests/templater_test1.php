@@ -43,7 +43,7 @@ class Test_Templater extends TestCase {
 		return '';
 	}
 
-	// тестируемые данные
+    // тестируемые данные
 
 	/**
 	 * тестируем оттранслированный шаблон
@@ -65,3 +65,5 @@ class Test_Templater extends TestCase {
 		);
 	}
 }
+
+?>
