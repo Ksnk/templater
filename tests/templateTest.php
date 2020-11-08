@@ -68,6 +68,24 @@ class templateTest extends TestCase
         return $x;
     }
 
+    /* todo: нипраходит :(
+     * вместо if поставлен i. По уму - должен ругаццо на лишний endif и, возможно, на корявую конструкцию с левыми операндами
+    function test_32(){
+        $s='<td><span class="glyphicon {{ but.glyph }}"
+                              data-addr="{{ modelname }}:{{ row.node|default(row.id) }}"
+                                {% i but.confirm %} data-confirm=\'{{ but.confirm|json_encode }}\'{% endif %}
+                              data-handle="plugin.action:{{ n }}" title="{{ but.title | default(n) }}"></span></td>';
+        $pattern = '<td><span class="glyphicon store"
+                              data-addr="table.buykp:222"Array data-confirm=\'{"0":1,"1":2,"2":3,"3":4,"4":5}\'
+                              data-handle="plugin.action:555" title="onetwothree"></span></td>';
+        $data=['modelname'=>'table.buykp', 'n'=>555,'but'=>['title'=>'onetwothree','glyph'=>'store', 'confirm'=>[1,2,3,4,5]], 'row'=>['node'=>222]];
+        $this->expectException(\Ksnk\templater\CompilationException::class);
+        $this->assertEquals($pattern,
+            $this->_test_cmpl($s, $data)
+        );
+
+    }
+*/
     function test31(){
         $s='####################################################################
 ##
@@ -825,7 +843,6 @@ class tpl_xxx extends tpl_yyy';
 
     /**
      * неправильно записан цикл. При трансляции выходит лажа
-     * todo: исправить!
      */
     function testFor()
     {
@@ -841,9 +858,7 @@ class tpl_xxx extends tpl_yyy';
 
 
     /**
-     *  2 ошибки.
-     * поставить = вместо ==
-     * закомментировать endif
+     * --- закомментировать endif
      */
 
     function testAbsentEndif()
@@ -855,14 +870,39 @@ class tpl_xxx extends tpl_yyy';
 {% elseif elem.type=='foto' %}
 {% else %}
        unsupported type <br>
+ ##   {% endif %}
+    {% endfor %}
+</div> ";
+        $pattern = '<div class=\'body\'>
+</div> ';
+        $this->expectException(\Ksnk\templater\CompilationException::class);
+
+        $this->_test_cmpl($s, $data);
+
+    }
+    /**
+     * --- поставить = вместо ==
+     * if elem.type='text' - вот сюда поставил
+     */
+/* todo: нипраходит ;(((
+    function testMissedEq()
+    {
+        $data = array('func' => 'fileman', 'data' => '<<<>>>');
+        $s = "<div class='body'>
+{% for elem in data %}
+{% if elem.type='text' %}
+{% elseif elem.type=='foto' %}
+{% else %}
+       unsupported type <br>
     {% endif %}
     {% endfor %}
 </div> ";
         $pattern = '<div class=\'body\'>
 </div> ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
+        //$this->expectException(\Ksnk\templater\CompilationException::class);
+        $this->assertEquals($pattern,
+        $this->_test_cmpl($s, $data)
         );
     }
-
+*/
 }

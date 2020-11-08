@@ -52,7 +52,7 @@ class php_compiler extends tpl_parser
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('replace', array($this, 'function_replace'), 'SSSS')
             ->newFunc('is_dir', 'is_dir(%s)', 'SI')
-            ->newFunc('length', 'count(%s)', 'DI')
+            ->newFunc('length', '$this->func_count(%s)', 'DI')
             ->newFunc('lipsum', '$this->func_lipsum(%s)')
             ->newFunc('round', 'round(%s)')
             ->newFunc('min')
@@ -111,6 +111,7 @@ class php_compiler extends tpl_parser
             // count a string
             $lexpos = 0;
             $line = 0;
+            $this->scaner->refillNL();
             foreach ($this->scaner->lines as $k => $v) {
                 if ($k >= $lex->pos) break;
                 $lexpos = $k;
