@@ -64,6 +64,7 @@ class php_compiler extends tpl_parser
             ->newFunc('explode', 'explode(%s)')
             ->newFunc('price', 'number_format(%s,0,"."," ")')
             ->newFunc('default', '$this->filter_default(%s)')
+            ->newFunc('var_export', array($this,'function_var_export'))
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
             ->newFunc('slice', '$this->func_slice(%s)')
             ->newFunc('range', '$this->func_range(%s)')
@@ -90,7 +91,8 @@ class php_compiler extends tpl_parser
            // ->newFunc('parent', 'parent::_styles(%s)')
             ->newFunc('parent', array($this, 'function_parent'))
             ->newFunc('debug', '\ENGINE::debug(%s)')
-            ->newOp1('_echo_', array($this, '_echo_'));
+            ->newOp1('_echo_', array($this, '_echo_'))
+            ->newFunc('external', array($this, '_external_'));
 
     }
 
@@ -184,6 +186,7 @@ class php_compiler extends tpl_parser
                             $res->val = '$' . $res->val;
                             $res->type = self::TYPE_OPERAND;
                         } else {
+                            $this->_store_external($res->val);
                             $res->val = '$par[\'' . $res->val . '\']';
                             $res->type = self::TYPE_XID;
                         }
@@ -254,7 +257,7 @@ class php_compiler extends tpl_parser
                 case 'D':
                 case self::TYPE_OPERAND:
                 case self::TYPE_STRING:
-                    if ($res->type == self::TYPE_ID) $this->to('I', $res);
+                    if ($res->type == self::TYPE_ID|| $res->type == self::TYPE_STRING2) $this->to('I', $res);
                     if ($res->type == self::TYPE_OBJECT) {
                         $res->val = call_user_func($res->handler, $res, '', 'value');
                         $res->type = self::TYPE_OPERAND;
@@ -307,6 +310,61 @@ class php_compiler extends tpl_parser
             . ')';
         $op1->type = "TYPE_OPERAND";
         return $op1;
+    }
+
+    /**
+     * фильтр - replace
+     * @param operand $op1 - TYPE_ID - имя функции
+     * @param operand $op2 - TYPE_LIST - параметры функции
+     * @return operand
+     * @throws CompilationException
+     */
+    function function_var_export($op1,$op2){
+        //{# '.preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export($par['extern'],true)).';#}
+        $value=array();
+       // foreach($op2->value['keys'] as &$v){
+            $value=$this->to('S', $op2)->val ;
+      //  }
+        //array_unshift($value,'$par');
+        $op1->val = "preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export(".$value.',true))' ;
+        $op1->type = "TYPE_OPERAND";
+        return $op1;
+    }
+
+    function _store_external($ext_key,$ext_value=[]){
+        // найдем opensentence уровня класс или макра
+        // $block=& $this->opensent('block');
+        $o=& $this->opensent('class');
+        if(!isset($o['extern']))
+            $o['extern']=[];
+        if(!isset($o['extern'][$ext_key]) || !empty($ext_value))
+            $o['extern'][$ext_key]=$ext_value;
+    }
+
+    /**
+     * Описатель внешней переменой, external(variable,a,b,c,d,e,f...) появляется external=['variable'=['a','b'...,'f'...]]
+     * @param $op1
+     * @param $op2
+     * @return mixed
+     */
+    function _external_($op1,$op2=[]){
+        $ext_key=null;
+        $ext_value=[];
+        if(!empty($op2) && $op2->type==self::TYPE_LIST) {
+            foreach ($op2->value['keys'] as $v) {
+                if (is_null($ext_key)) {
+                    $ext_key = $v->orig ?: $v->val;
+                } else {
+                    $ext_value[] = $v->orig ?: $v->val;
+                }
+            }
+        } else {
+            $ext_key=$op1->orig;
+            $ext_value=[];
+        }
+        // найдем opensentence уровня класс или макра
+        $this->_store_external($ext_key,$ext_value);
+        return false;
     }
 
     /**

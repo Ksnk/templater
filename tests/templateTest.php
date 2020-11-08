@@ -57,6 +57,7 @@ class templateTest extends TestCase
         $calc = new \Ksnk\templater\php_compiler();
         $calc->makelex($tpl);
         $result = $calc->tplcalc('test' . $classnumber);
+        if(empty($result)) return null;
         $t = 'tpl_test' . $classnumber;
         if ($show) echo $result . "\n\n";
         file_put_contents($t.'.php',$result); include($t.'.php');
@@ -67,7 +68,74 @@ class templateTest extends TestCase
         return $x;
     }
 
-        /** test extends-parent  */
+    function test31(){
+        $s='####################################################################
+##
+##  файл шаблонов для шаблонизатора
+##
+####################################################################
+
+####################################################################
+## class
+##
+{%- block class -%}
+<?php
+/**
+ * this file is created automatically at "{{ now(\'d M Y G:i\') }}". Never change anything,
+ * for your changes can be lost at any time.
+ */
+{# ## don\'t need includes any more
+{% if extends %}
+include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{extends}}.php\';
+{% else %}
+include_once \'tpl_base.php\';
+{% endif %}
+
+{% for imp in import -%}
+require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{imp}}.php\';
+{% endfor %}
+#}
+class tpl_{{name}} extends tpl_{{`extends` |default(\'base\') }}
+{%endblock%}';
+        $pattern = '
+<?php
+/**
+ * this file is created automatically at "'.date('d M Y G:i').'". Never change anything,
+ * for your changes can be lost at any time.
+ */
+
+class tpl_xxx extends tpl_yyy';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false)
+        );
+    }
+
+
+    function test_test29(){
+        $s="tpl_{{`extends` |default('base') }}";
+        $pattern = 'tpl_yyy';
+        $this->assertEquals(
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false), $pattern
+        );
+    }
+
+    function test_test30(){
+        $s="class tpl_{{ext+min(5,4,3)}}";
+        $pattern = 'class tpl_9';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'ext'=>'6'],false)
+        );
+    }
+
+    function test_test28(){
+        $s="class tpl_{{5+min(5,4,3)}}";
+        $pattern = 'class tpl_8';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'6'],false)
+        );
+    }
+
+    /** test extends-parent  */
     function test_test27()
     {
         $s = '##
@@ -736,9 +804,9 @@ class templateTest extends TestCase
             )));
         $s = file_get_contents(dirname(__FILE__) . '/quick.form.twig');
 
-        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial, sans-serif; font-size: small; } . quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
-        $this->assertEquals(
-            $this->compress($this->_test_cmpl($s, $data)), $pattern
+        $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial, sans-serif; font-size: small; } .quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
+        $this->assertEquals( $pattern,
+            $this->compress($this->_test_cmpl($s, $data))
         );
     }
 
@@ -767,9 +835,8 @@ class templateTest extends TestCase
 <th>{{ name }}</th>
             {% endif %}{% endfor %}';
         $pattern = '1230 1100 1300 1230';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
+        $this->expectException(\Ksnk\templater\CompilationException::class);
+        $this->_test_cmpl($s, $data);
     }
 
 

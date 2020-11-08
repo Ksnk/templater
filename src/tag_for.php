@@ -130,13 +130,9 @@ class tag_for
         }
 
         $this->parcer = $parcer;
-        /*       $op = $parcer->oper('loop', self::TYPE_OBJECT);
-               $op->handler = array($this, 'operand_loop');
-               $parcer->newOpr('loop', $op);  */
 
         $parcer->newOpr('loop', array($this, 'operand_loop'));
 
-        //$parcer->newId($parcer->oper('loop', self::TYPE_ID));
         do {
             $parcer->getNext();
             switch (strtolower($parcer->op->val)) {
@@ -161,7 +157,6 @@ class tag_for
                         $parcer->error('unexpected construction1');
             }
         } while (true);
-        //$parcer->opensentence[]=$this->tag;
 
         $this->tag['else'] = false;
         do {
@@ -171,7 +166,6 @@ class tag_for
             if ($parcer->op->val == 'else') {
                 $this->tag['body'] = $parcer->to(array(tpl_parser::TYPE_SENTENSE, 'value'), $op);
                 $this->tag['else'] = true;
-                // $parcer->getNext(); // съели символ, закрывающий тег
             } elseif ($parcer->op->val == 'endfor') {
                 $parcer->getNext(); // съели символ, закрывающий тег
                 if ($this->tag['else']) {
@@ -189,7 +183,6 @@ class tag_for
                 break;
             }
         } while (true);
-        //$parcer->getNext(); // съели символ, закрывающий тег
 
     }
 }

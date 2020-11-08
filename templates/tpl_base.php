@@ -20,7 +20,8 @@ class tpl_base
         if (empty($x)) return $default; else return $x;
     }
 
-    function __construct(){
+    function __construct()
+    {
         $this->macro=array();
     }
 
@@ -112,7 +113,7 @@ class tpl_base
     }
 
     function func_json_encode($s){
-        return utf8_encode(json_encode($s));
+        return utf8_encode(json_encode($s,JSON_FORCE_OBJECT));
     }
 
     function func_repeat($s,$num){
@@ -420,7 +421,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      */
     public function call(&$par, $s)
     {
-        if (method_exists($this, '_' . $s)) {
+        if (!is_null($s) && method_exists($this, '_' . $s)) {
             $args = func_get_args();
             array_splice($args, 1, 1);
             $args[0] =& $par;
@@ -440,6 +441,11 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return UTILS::url($p1,$p2,$p3);
     }
 
+    public function func_count($x){
+        if(is_countable ($x) ) return count($x);
+        return 0;
+    }
+
     /**
      * фильтр join
      * @param array $pieces
@@ -451,7 +457,6 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         if (!is_array($pieces)) return $pieces;
         return implode($glue, $pieces);
     }
-
 
     /**
      * фильтр in_array - проверка на наличие значения в массиве
@@ -479,19 +484,31 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * фильтр slice - вывод значения по умолчанию, при пустом параметре
-     * @param $value
-     * @param $slices
-     * @param string $fill_with
+     * @param mixed $value
+     * @param int $start
+     * @param int $len
+     * @param mixed $fill_with
      * @return array
      */
-    function func_slice($value, $slices, $fill_with = '')
+    function func_slice($value, $start,$len=-1, $fill_with = '')
     {
-        if (!is_array($value)) return array();
-        $res = array();
-        for ($i = 0; $i < count($value); $i += $slices) {
-            $res[] = array_slice($value, $i, $slices);
+        if (!is_array($value)) {
+            $strlen=mb_strlen($value,'utf-8');
+            if($strlen<=$start) return '';
+            if($len<0) $len = $strlen-$start;
+            if($strlen<=$start+$len-1){
+                $len=$strlen-$start;
+            }
+            // string slice
+            return mb_substr($value,$start,$len,'utf-8');
+        };
+        $arrlen=count($value);
+        if($arrlen<=$start) return [];
+        if($len<0) $len = $arrlen-$start;
+        if($arrlen<=$start+$len-1){
+            $len=$arrlen-$start;
         }
-        return $res;
+        return array_slice($value,$start,$len);
     }
 
     /**
@@ -507,7 +524,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * Хелпер для циклов.
-     * @param array $loop_array
+     * @param unknown_type $loop_array
      * @return mixed|string
      */
     function loopcycle(&$loop_array)
@@ -523,11 +540,12 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      */
     function func_bk(&$el)
     {
-        $x=func_get_args();
+        $x = func_get_args();
         array_shift($x);
-        $result=&$el;
-        foreach ($x as $idx){
-            if (is_array($result) && array_key_exists($idx,$result)) $result=&$result[$idx];
+        $result = &$el;
+        foreach ($x as $idx) {
+            if (is_array($result) && array_key_exists($idx, $result))
+                $result = &$result[$idx];
             elseif (is_object($result))
                 @$result = &$result->$idx;
             else return '';

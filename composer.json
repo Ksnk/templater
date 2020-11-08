@@ -21,7 +21,8 @@
   },
   "autoload": {
     "psr-4": {
-      "Ksnk\\templater\\": "src/"
+      "Ksnk\\templater\\": "src/",
+      "Ksnk\\scaner\\": "scaner/"
     }
   },
 

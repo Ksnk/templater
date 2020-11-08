@@ -24,7 +24,10 @@ include_once 'tpl_base.php';
 require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
 {% endfor %}
 #}
-class tpl_{{name}} extends tpl_{{extends |default('base') }} {
+class tpl_{{name}} extends tpl_{{`extends` |default('base') }} {
+{% if extern %}
+public static $extern={{ extern |var_export }};
+{% endif %}
 function __construct(){
 parent::__construct();
 {% for m in macro %}
@@ -59,7 +62,7 @@ $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p
 ####################################################################
 ##  представление тега SET
 ##
-{%- block set %}{{id}}={{res}}{%- endblock %}
+{%- block set %}{{id}}={{res}}{%- endblock -%}
 
 ####################################################################
 ## представление тега FOR
@@ -69,32 +72,31 @@ $result.=call_user_func($this->macro['{{name}}'],array({%for p in parkeys %}'{{p
 {% if loop_index -%}
 $loop{{loopdepth}}_index=0;
 {% endif%}
+{% if loop_cycle -%}
+$loop{{loopdepth}}_cycle={{loop_cycle}};
+{% endif%}
+if ((is_array($loop{{loopdepth}}_array) && !empty($loop{{loopdepth}}_array))
+||($loop{{loopdepth}}_array instanceof Traversable)){
 {% if loop_last -%}
 $loop{{loopdepth}}_last=count($loop{{loopdepth}}_array);
 {% endif%}
 {% if loop_revindex -%}
 $loop{{loopdepth}}_revindex=$loop{{loopdepth}}_last+1;
 {% endif%}
-{% if loop_cycle -%}
-$loop{{loopdepth}}_cycle={{loop_cycle}};
-{% endif%}
-if ((is_array($loop{{loopdepth}}_array) && !empty($loop{{loopdepth}}_array))
-||($loop{{loopdepth}}_array instanceof Traversable)){
 foreach($loop{{loopdepth}}_array as {{index}}
 {%if  index2 %} =>{{index2}} {% endif %}){
-
 {% if loop_index %}    $loop{{loopdepth}}_index++;
 {% endif%}
 {% if loop_revindex %}    $loop{{loopdepth}}_revindex--;
 {% endif %}
 {{body}}
 }}
-{% if else %}
+{% if `else` %}
 else {
-{{else}}
+{{`else`}}
 }{% endif %}
 
-{%- endblock %}
+{%- endblock -%}
 
 ####################################################################
 ## представление тега блок в функции

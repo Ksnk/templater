@@ -53,10 +53,7 @@ ver: '.$tag.', Last build: '.$buildtime.'
     <!-- **** core files                   **** -->
     <!-- ************************************** -->
     <files dstdir="build/lib">
-        <file>template_parser.class.php</file>
-        <file>compiler.class.php</file>
-        <file>compiler.php.php</file>
-        <file dir="../nat2php">nat2php.class.php</file>
+        <file dir="src">*.php</file>
     </files>
     <files dstdir="build/render">
         <file dir="templates">tpl_base.php</file>

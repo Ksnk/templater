@@ -11,7 +11,7 @@
 
 namespace Ksnk\templater ;
 
-use Ksnk\templater\scaner;
+use Ksnk\scaner\scaner;
 
 class tpl_parser
 {
@@ -117,6 +117,8 @@ class tpl_parser
         #### синтаксические ошибки скрипта
         # wtf
     , 'wtf' => 'wtf'
+        # операция на месте операнда
+    , 'undefined operation' => 'undefined operation'
         # нет закрывающей скобки
     , 'closed brackets missed' => 'closed brackets missed'
         # синтаксическая ошибка - много операций и мало операндов
@@ -180,6 +182,15 @@ class tpl_parser
          */
         $scaner = null;
 
+    function reset(){
+        $this->locals = array(); // стек идентификаторов с областью видимости
+        $this->ids_low = 0; // нижняя граница области видимости
+        $this->curlex = 0;
+        $this->opensentence=[];
+        $this->operand=[];
+        $this->op=[];
+        $this->lex=[];
+    }
 
     function __construct()
     {
@@ -278,13 +289,13 @@ class tpl_parser
                 $this->back();
                 break;
             }
-            if (!empty($tag_waitingfor) && in_array($this->op->val, $tag_waitingfor)) {
+            if (!empty($tag_waitingfor) && $this->op->type!=self::TYPE_STRING2 && in_array($this->op->val, $tag_waitingfor)) {
                 $this->back();
                 break;
             }
             if ($this->op->type == self::TYPE_COMMA && empty($this->op->val)) {
 
-            } elseif ($this->exec_tag($this->op->val)) {
+            } elseif ($this->op->type != self::TYPE_STRING2 && $this->exec_tag($this->op->val)) {
                 $op = $this->popOp();
                 if (!empty($op)) {
                     $op = $this->to('S', $op);
@@ -437,13 +448,6 @@ class tpl_parser
         ], '~:start_1::trim:?~sm',
             function ($line) use ($reg, $types,&$triml) {
                // print_r($line);
-                if(!empty($line['cline'])) {
-                    $this->scaner->scan('~(.*?)\r?\n~i');
-                    return;
-                } else if(!empty($line['cstart'])) {
-                    $this->scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
-                    return;
-                }
                 if($triml && !empty($line['_skiped'])) {
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
                     if($line['_skiped']!='') $triml=false;
@@ -462,6 +466,14 @@ class tpl_parser
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
                     $line['_skiped']='';
                 }
+                if(!empty($line['cline'])) {
+                    $this->scaner->scan('~(.*?)\r?\n~i');
+                    return;
+                } else if(!empty($line['cstart'])) {
+                    $this->scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
+                    return;
+                }
+
                 /*if(!empty($line['trim'])) {
                     $this->lex[] = $this->oper('_trimr_', self::TYPE_OPERATION, $this->scaner->getpos());
                     $line['trim']=false;
@@ -667,10 +679,12 @@ class tpl_parser
         $tag = array('tag' => 'block', 'operand' => count($this->operand), 'data' => array());
         $this->getExpression(); // получили имя идентификатора
         $tag['name'] = $this->popOp()->val;
-        $this->currentFunction=$tag['name'];
+        $this->currentFunction = $tag['name'];
+        $this->opensentence[] = & $tag;
         $this->getNext();
         $this->block_internal(array('endblock'), $tag);
         $this->getNext();
+        array_pop($this->opensentence);
         if ($this->op->type != self::TYPE_COMMA)
             $this->getNext();
     }
@@ -693,6 +707,7 @@ class tpl_parser
 
     /**
      * отрабoтка тега if
+     * @return
      */
     function tag_if()
     {
@@ -783,7 +798,7 @@ class tpl_parser
      * @param string $class
      * @return mixed|string
      */
-    function tplcalc($class = 'compiler')
+    function tplcalc($class = 'compiler', $tpl_class = 'compiler')
     {
         $tag = array('tag' => 'class', 'import' => array(), 'macro' => array(), 'name' => $class, 'data' => array());
         $this->opensentence[] = &$tag;
@@ -803,7 +818,7 @@ class tpl_parser
             }
             unset($tag['data'][$x]);
         }
-        return $this->template('class', $tag);
+        return $this->template('class', $tag, $tpl_class);
     }
 
     /**
@@ -813,10 +828,10 @@ class tpl_parser
      * @param string $tpl_class - имя базового шаблона
      * @return mixed|string
      */
-    function template($idx = null, $par = null, $tpl_class = 'compiler')
+    function template($idx = null, $par = null, $tpl_class = '')
     {
         static $tpl_compiler;
-        if (!is_null($tpl_class) || empty($tpl_compiler)) {
+        if (!empty($tpl_class) || empty($tpl_compiler)) {
             $tpl_compiler = 'tpl_' . \tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {
                 // попытка включить файл
@@ -847,7 +862,7 @@ class tpl_parser
     function exec_tag($tag)
     {
         $name = 'tag_' . $tag;
-        if (class_exists($name, true)) {
+        if (class_exists($name, false)) {
             $tag = new $name();
             $tag->execute($this);
         } elseif (class_exists($cl=__NAMESPACE__.'\\'.$name, true)) {
@@ -1179,7 +1194,11 @@ class tpl_parser
                             if ($this->op->val != ')')
                                 $this->error('closed brackets missed'); // гарантированно - ОПЕРАНД
                             $this->execute($op);
-
+                       /* } elseif(isset($this->binop[$op->val]))  { // бинарная операция
+                           // $this->back();
+                            $this->pushOp($op);
+                            $place = 2;
+                            break;*/
                         } else { // унарная операция
                             $this->back();
                             $this->calc($op, true);

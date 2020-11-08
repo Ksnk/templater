@@ -26,17 +26,19 @@ class Test_Templater extends TestCase {
 
 	var $this_template='../templates/compiler.jtpl';
 
-	function compile_it($class_name='compiler'){
+	function compile_it($class_name='compiler',$src_class=''){
 		static $compiler;
 		if(empty($compiler))
 			$compiler=new \Ksnk\templater\template_compiler();
 		if(!class_exists($t='tpl_'.$class_name, false)){
 			if(is_file($this->this_template)){
-				$x=$compiler->compile_tpl(file_get_contents($this->this_template),$class_name);
+				$x=$compiler->compile_tpl(file_get_contents($this->this_template),$class_name,$src_class);
+				if(empty($x)) return '';
                 file_put_contents($t.'.php',str_replace('class tpl_test extends','class '.$t.' extends',$x));
                 include($t.'.php');
 
-                echo'<pre>'.htmlspecialchars($x).'</pre>';
+                echo'//---------------------------
+'.$x;
 				return $x;
 			}
 		}
@@ -50,8 +52,8 @@ class Test_Templater extends TestCase {
 	 */
 	function test_tpl_set(){
 		$compiler=$this->compile_it('test');
-		$compiler=$this->compile_it('test1');
-		$compiler1=$this->compile_it('test2');
+		$compiler=$this->compile_it('test1','test');
+		$compiler1=$this->compile_it('test2','test1');
 		//if(!empty($_GET['compile'])){
 			$s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
 			if(!empty($s)){
