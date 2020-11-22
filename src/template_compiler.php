@@ -97,7 +97,7 @@ class template_compiler
                     || (max($xtime, filemtime($v)) > filemtime($phpn))
                 ) {
                     php_compiler::$filename = $v;
-                    $x = self::compile_tpl($v, $name);
+                    $x = self::compile_tpl(file_get_contents($v), $name);
                     if (!!$x) {
                         if(false===($size=file_put_contents($phpn, $x))){
                             if($force) echo $NLBR."error writing file " .$phpn;

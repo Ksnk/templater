@@ -249,7 +249,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
             'wed'=>'срд',
             'thu'=>'чтв',
             'fri'=>'птн',
-            'sat'=>'сбб',
+            'sat'=>'сбт',
             'sun'=>'вск',
         );
 
