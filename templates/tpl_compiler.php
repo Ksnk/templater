@@ -1,6 +1,6 @@
 <?php
 /**
- * this file is created automatically at "08 Nov 2020 13:42". Never change anything,
+ * this file is created automatically at "22 Nov 2020 10:37". Never change anything,
  * for your changes can be lost at any time.
  */
 
@@ -323,7 +323,7 @@ $result.='
 function _if($par){
 $result='';
 $if_index=1;
-$if_last=count((isset($par['data'])?$par['data']:""));
+$if_last=$this->func_count((isset($par['data'])?$par['data']:""));
 @$loop2_array=self::ps($par['data']);
 if ((is_array($loop2_array) && !empty($loop2_array))
 ||($loop2_array instanceof Traversable)){
