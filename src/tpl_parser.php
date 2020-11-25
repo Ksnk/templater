@@ -177,6 +177,7 @@ class tpl_parser
          */
         $op = null,
 
+        $namespace='',
         /**
          * @var scaner
          */
@@ -801,6 +802,10 @@ class tpl_parser
     function tplcalc($class = 'compiler', $tpl_class = 'compiler')
     {
         $tag = array('tag' => 'class', 'import' => array(), 'macro' => array(), 'name' => $class, 'data' => array());
+        if($this->namespace){
+            $tag['namespace']=$this->namespace;
+        }
+
         $this->opensentence[] = &$tag;
 
         $tagx = array('tag' => 'block', 'name' => ' ', 'operand' => count($this->operand), 'data' => array());
@@ -832,7 +837,10 @@ class tpl_parser
     {
         static $tpl_compiler;
         if (!empty($tpl_class) || empty($tpl_compiler)) {
-            $tpl_compiler = 'tpl_' . \tpl_base::pps($tpl_class, 'compiler');
+            if($this->namespace)
+                $tpl_compiler = '\\' .$this->namespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
+            else
+                $tpl_compiler = 'tpl_' . \tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {
                 // попытка включить файл
                 include_once (template_compiler::options('templates_dir') . $tpl_compiler . '.php');

@@ -20,7 +20,8 @@ class template_compiler
 
     static private $opt = array(
         'templates_dir' => 'templates/',
-        'TEMPLATE_EXTENSION' => 'jtpl'
+        'TEMPLATE_EXTENSION' => 'jtpl',
+        'namespace'=>'Ksnk\templates'
     );
 
     static public function options($options = '', $val = null,$default='')
@@ -53,6 +54,9 @@ class template_compiler
         $result = '';
         try {
             $calc->makelex($tpl);
+            $ns=self::options('namespace');
+            if(!empty($ns))
+                $calc->namespace=$ns;
             $result = $calc->tplcalc($name, $tpl_class);
         } catch (CompilationException $e) {
             echo $e->getMessage();

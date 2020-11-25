@@ -1,9 +1,9 @@
 <?php
 /**
- * this file is created automatically at "24 Nov 2020 22:28". Never change anything,
+ * this file is created automatically at "24 Nov 2020 22:30". Never change anything,
  * for your changes can be lost at any time.
- */
-class tpl_compiler extends tpl_base {
+ */namespace Ksnk\templates;
+class compiler extends base {
 public static $extern=['namespace' =>[],
   'name' =>[],
   'extends' =>[],

@@ -47,25 +47,31 @@ class Test_Templater extends TestCase {
 
     // тестируемые данные
 
-	/**
-	 * тестируем оттранслированный шаблон
-	 */
-	function test_tpl_set(){
-		$compiler=$this->compile_it('test');
-		$compiler=$this->compile_it('test1','test');
-		$compiler1=$this->compile_it('test2','test1');
-		//if(!empty($_GET['compile'])){
-			$s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
-			if(!empty($s)){
-		        echo 'xxx!';
-		        file_put_contents ('../templates/tpl_compiler.php',$s);
-			}
-		//}
-		$this->assertEquals(
-			 str_replace('tpl_test1','tpl_test2',$compiler)
-			,$compiler1
-		);
-	}
+    /**
+     * тестируем оттранслированный шаблон
+     */
+    function test_tpl_set(){
+        $compiler=$this->compile_it('test');
+        $compiler=$this->compile_it('test1','test');
+        $compiler1=$this->compile_it('test2','test1');
+        //if(!empty($_GET['compile'])){
+        $s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
+        if(!empty($s)){
+            echo 'xxx!';
+            file_put_contents ('../templates/tpl_compiler.php',$s);
+        }
+        //}
+        $this->assertEquals(
+            str_replace('tpl_test1','tpl_test2',$compiler)
+            ,$compiler1
+        );
+    }
+    /**
+     * тестируем оттранслированный шаблон
+     */
+    function test_tpl_one(){
+        $compiler=$this->compile_it('test');
+    }
 }
 
 ?>

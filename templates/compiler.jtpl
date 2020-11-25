@@ -13,6 +13,7 @@
  * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything,
  * for your changes can be lost at any time.
  */
+{% if namespace %}namespace {{ namespace }};{% endif %}
 {# ## don't need includes any more
 {% if extends %}
 include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{extends}}.php';
@@ -24,7 +25,7 @@ include_once 'tpl_base.php';
 require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
 {% endfor %}
 #}
-class tpl_{{name}} extends tpl_{{`extends` |default('base') }} {
+{% if not namespace %}class tpl_{{name}}{% else %}{{'class '~name}}{% endif %} extends {% if not namespace %} tpl_{{`extends` |default('base') }}{% else %}{{ `extends` |default(' base') }}{% endif %} {
 {% if extern %}
 public static $extern={{ extern |var_export }};
 {% endif %}
