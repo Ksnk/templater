@@ -14,18 +14,8 @@
  * for your changes can be lost at any time.
  */
 {% if namespace %}namespace {{ namespace }};{% endif %}
-{# ## don't need includes any more
-{% if extends %}
-include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{extends}}.php';
-{% else %}
-include_once 'tpl_base.php';
-{% endif %}
 
-{% for imp in import -%}
-require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.'tpl_{{imp}}.php';
-{% endfor %}
-#}
-{% if not namespace %}class tpl_{{name}}{% else %}{{'class '~name}}{% endif %} extends {% if not namespace %} tpl_{{`extends` |default('base') }}{% else %}{{ `extends` |default(' base') }}{% endif %} {
+class {% if not namespace %}tpl_{% endif %}{{name}} extends {% if not namespace %}tpl_{% endif %}{{ `extends` |default('base') }} {
 {% if extern %}
 public static $extern={{ extern |var_export }};
 {% endif %}

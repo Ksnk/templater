@@ -206,7 +206,7 @@ class tpl_parser
             'COMMENT_END' => '#}',
             'COMMENT_LINE' => '##',
             'trim' => true,
-            'COMPRESS_START_BLOCK' => true
+            'COMPRESS_START_BLOCK' => false
         ));
         $this
             ->newOp2('_scratch_', 11, array($this, 'function_scratch'))
@@ -454,8 +454,12 @@ class tpl_parser
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
                     if($line['_skiped']!='') $triml=false;
                 }
-                if(!empty($line['bstart']) && $this->isOption('COMPRESS_START_BLOCK')) {
-                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                if(!empty($line['bstart'])){
+                    if($this->isOption('COMPRESS_START_BLOCK')) {
+                        $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                    } else {
+                        $line['_skiped'] = preg_replace('/^\s*\r?\n?$/', '', preg_replace('/(\r?\n)\s*?$/', '\1',$line['_skiped']));
+                    }
                 }
                 if(!empty($line['_skiped'])) {
                     $pos=$this->scaner->getpos();
