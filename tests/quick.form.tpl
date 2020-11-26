@@ -54,7 +54,7 @@
             {{ element.label }}
             </label>
 
-            <div class="element group {% if element.error %} error{% endif %}">
+            <div class="element group{% if element.error %} error{% endif %}">
             {% if element.error %}<span class="error">{{ element.error }}<br/></span>{% endif %}
             {% for child in element.elements %}
             {{ _self.output_element(child, true) }}
@@ -71,7 +71,7 @@
             {{ element.label }}
             </label>
 
-            <div class="element {% if element.error %} error{% endif %}">
+            <div class="element{% if element.error %} error{% endif %}">
             {% if element.error %}<span class="error">{{ element.error }}<br/></span>{% endif %}
             {{ element.html|raw }}
             </div>

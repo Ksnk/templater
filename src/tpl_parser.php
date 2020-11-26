@@ -117,6 +117,8 @@ class tpl_parser
         #### синтаксические ошибки скрипта
         # wtf
     , 'wtf' => 'wtf'
+        # операция на месте операнда
+    , 'undefined operation' => 'undefined operation'
         # нет закрывающей скобки
     , 'closed brackets missed' => 'closed brackets missed'
         # синтаксическая ошибка - много операций и мало операндов
@@ -180,6 +182,15 @@ class tpl_parser
          */
         $scaner = null;
 
+    function reset(){
+        $this->locals = array(); // стек идентификаторов с областью видимости
+        $this->ids_low = 0; // нижняя граница области видимости
+        $this->curlex = 0;
+        $this->opensentence=[];
+        $this->operand=[];
+        $this->op=[];
+        $this->lex=[];
+    }
 
     function __construct()
     {
@@ -193,7 +204,7 @@ class tpl_parser
             'COMMENT_END' => '#}',
             'COMMENT_LINE' => '##',
             'trim' => true,
-            'COMPRESS_START_BLOCK' => true
+            'COMPRESS_START_BLOCK' => false
         ));
         $this
             ->newOp2('_scratch_', 11, array($this, 'function_scratch'))
@@ -278,13 +289,13 @@ class tpl_parser
                 $this->back();
                 break;
             }
-            if (!empty($tag_waitingfor) && in_array($this->op->val, $tag_waitingfor)) {
+            if (!empty($tag_waitingfor) && $this->op->type!=self::TYPE_STRING2 && in_array($this->op->val, $tag_waitingfor)) {
                 $this->back();
                 break;
             }
             if ($this->op->type == self::TYPE_COMMA && empty($this->op->val)) {
 
-            } elseif ($this->exec_tag($this->op->val)) {
+            } elseif ($this->op->type != self::TYPE_STRING2 && $this->exec_tag($this->op->val)) {
                 $op = $this->popOp();
                 if (!empty($op)) {
                     $op = $this->to('S', $op);
@@ -450,8 +461,12 @@ class tpl_parser
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
                     if($line['_skiped']!='') $triml=false;
                 }
-                if(!empty($line['bstart']) && $this->isOption('COMPRESS_START_BLOCK')) {
-                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                if(!empty($line['bstart'])){
+                    if($this->isOption('COMPRESS_START_BLOCK')) {
+                        $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                    } else {
+                        $line['_skiped'] = preg_replace('/(^\s*\r?\n?|\r?\n\s*?)$/', '', $line['_skiped']);
+                    }
                 }
                 if(!empty($line['_skiped'])) {
                     $pos=$this->scaner->getpos();

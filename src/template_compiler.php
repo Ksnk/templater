@@ -46,6 +46,8 @@ class template_compiler
         static $calc;
         if (empty($calc)) {
             $calc = new php_compiler();
+        } else {
+            $calc->reset();
         }
         //compile it;
         $result = '';
@@ -85,17 +87,30 @@ class template_compiler
 
         if (!empty($templates)) {
             foreach ($templates as $v) {
-                $name = basename($v, "." . $ext);
+                $name = str_replace('.','_',basename($v, "." . $ext));
                 $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
+                $force=self::options('FORCE');
+                $NLBR=php_sapi_name() == "cli"?"\n":"<br>\n";
                 if (
-                    ''!=self::options('FORCE')
+                    !empty($force)
                     || !file_exists($phpn)
                     || (max($xtime, filemtime($v)) > filemtime($phpn))
                 ) {
                     php_compiler::$filename = $v;
-                    $x = self::compile_tpl($v, $name);
-                    if (!!$x)
-                        file_put_contents($phpn, $x);
+                    $x = self::compile_tpl(file_get_contents($v), $name);
+                    if (!!$x) {
+                        if(false===($size=file_put_contents($phpn, $x))){
+                            if($force) echo $NLBR."error writing file " .$phpn;
+                        } else {
+                            if($force) printf($NLBR."success writing file %s(%s)",$phpn,$size);
+                        };
+                    } else if($force) {
+                        echo $NLBR."fail with " .$phpn;
+                    }
+                } else {
+                    if($force) {
+                        echo $NLBR."skipped with " .$phpn;
+                    }
                 }
             }
         }

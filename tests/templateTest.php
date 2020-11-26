@@ -557,7 +557,7 @@ class templateTest extends TestCase
 {% else %}{%set last=\'\' %}{% endif %}
 <th class="{{bg}}" style="border-left:none;{{last}}">{{loop.index0}}</th>
 {% for  r in rr %}
-<td class="{{bg}}" {% if last %} style="{{last}}"{%endif%}>
+<td class="{{bg}}"{% if last %} style="{{last}}"{%endif%}>
 <div id="item_text_{{r.id}}" class="text_edit">{{r.text|default(\'&nbsp;\')}}</div></td>
 {% endfor %}
 <td class="bgdray">
@@ -757,10 +757,9 @@ class templateTest extends TestCase
 
     function testAlign()
     {
-        $data = array('func' => 'fileman');
-        $s = '{%- if xxx -%}yyy{% endif -%}{# 
-        #}Hello {{func}}';
-        $pattern = 'Hello fileman';
+        $data = array('namespace' => 'xxx', 'name'=>'yyy');
+        $s = "class {% if not namespace %}tpl_{% endif %}{{name}} extends {";
+        $pattern = 'class yyy extends {';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
