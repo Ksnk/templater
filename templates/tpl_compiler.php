@@ -126,7 +126,7 @@ if( (isset($par['loop_last']) && !empty($par['loop_last'])) ) {
 
 $result.='$loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
-    .'_last=count($loop'
+    .'_last=$this->func_count($loop'
     .(isset($par['loopdepth'])?$par['loopdepth']:"")
     .'_array);';
 };
@@ -288,7 +288,7 @@ $result.='
 function _if($par){
 $result='';
 $if_index=1;
-$if_last=count((isset($par['data'])?$par['data']:""));
+$if_last=$this->func_count((isset($par['data'])?$par['data']:""));
 @$loop1_array=self::ps($par['data']);
 if ((is_array($loop1_array) && !empty($loop1_array))
 ||($loop1_array instanceof Traversable)){

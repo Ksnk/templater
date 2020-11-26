@@ -755,6 +755,17 @@ class templateTest extends TestCase
         );
     }
 
+    function testAlign()
+    {
+        $data = array('func' => 'fileman');
+        $s = '{%- if xxx -%}yyy{% endif -%}{# 
+        #}Hello {{func}}';
+        $pattern = 'Hello fileman';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
     /**
      *  2 ошибки.
      * поставить = вместо ==

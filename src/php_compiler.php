@@ -52,7 +52,7 @@ class php_compiler extends tpl_parser
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('replace', array($this, 'function_replace'), 'SSSS')
             ->newFunc('is_dir', 'is_dir(%s)', 'SI')
-            ->newFunc('length', 'count(%s)', 'DI')
+            ->newFunc('length', '$this->func_count(%s)', 'DI')//            ->newFunc('length', 'count(%s)', 'DI')
             ->newFunc('lipsum', '$this->func_lipsum(%s)')
             ->newFunc('round', 'round(%s)')
             ->newFunc('min')
