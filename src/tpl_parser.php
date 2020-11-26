@@ -12,6 +12,7 @@
 namespace Ksnk\templater ;
 
 use Ksnk\scaner\scaner;
+use Ksnk\templates\base as tpl_base;
 
 class tpl_parser
 {
@@ -840,7 +841,7 @@ class tpl_parser
             if($this->namespace)
                 $tpl_compiler = '\\' .$this->namespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
             else
-                $tpl_compiler = 'tpl_' . \tpl_base::pps($tpl_class, 'compiler');
+                $tpl_compiler = 'tpl_' . tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {
                 // попытка включить файл
                 include_once (template_compiler::options('templates_dir') . $tpl_compiler . '.php');
@@ -1065,7 +1066,7 @@ class tpl_parser
      */
     function &newOp1($op, $phpeq = null, $types = '*')
     {
-        return $this->new_Op($op, 10, $this->unop, \tpl_base::pps($phpeq, '(~~~(%s))'), $types);
+        return $this->new_Op($op, 10, $this->unop, tpl_base::pps($phpeq, '(~~~(%s))'), $types);
     }
 
     /**
@@ -1078,7 +1079,7 @@ class tpl_parser
      */
     function &newOpS($op, $phpeq = null, $prio = 10, $types = '*')
     {
-        return $this->new_Op($op, $prio, $this->suffop, \tpl_base::pps($phpeq, '(%s~~~)'), $types);
+        return $this->new_Op($op, $prio, $this->suffop, tpl_base::pps($phpeq, '(%s~~~)'), $types);
     }
 
     /**
@@ -1110,7 +1111,7 @@ class tpl_parser
      */
     function &newOp2($op, $prio = 10, $phpeq = null, $types = '*')
     {
-        return $this->new_Op($op, $prio, $this->binop, \tpl_base::pps($phpeq, '((%s)~~~(%s))'), $types);
+        return $this->new_Op($op, $prio, $this->binop, tpl_base::pps($phpeq, '((%s)~~~(%s))'), $types);
     }
 
     /**
@@ -1121,12 +1122,12 @@ class tpl_parser
      */
     public function error($msgId, $lex = null)
     {
-        $mess = \tpl_base::pps($this->error_msg[$msgId], $msgId);
+        $mess = tpl_base::pps($this->error_msg[$msgId], $msgId);
         if (is_null($lex)) {
             $lex = $this->op;
         }
         if (!is_null($lex)) {
-            $mess .= sprintf(' pos:%s lex:"%s"', \tpl_base::pps($lex->pos, -1), \tpl_base::pps($lex->val, -1));
+            $mess .= sprintf(' pos:%s lex:"%s"', tpl_base::pps($lex->pos, -1), tpl_base::pps($lex->val, -1));
         }
         throw new CompilationException($mess);
     }

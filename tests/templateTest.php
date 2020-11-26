@@ -2,8 +2,9 @@
 include_once '../vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
+use Ksnk\templates\base as tpl_base;
 
-include_once 'header.inc.php';
+// include_once 'header.inc.php';
 
 function pps(&$x, $default = '')
 {
@@ -52,19 +53,21 @@ class templateTest extends TestCase
     function _test_cmpl($tpl, $data=array(), $show = false,$macro='_')
     {
         static $classnumber = 10;
-        while(class_exists('tpl_test' . $classnumber, false))
-           $classnumber++;
         $calc = new \Ksnk\templater\php_compiler();
+        $calc->namespace='Ksnk\templates';
+
+        while(class_exists($calc->namespace.'\test' . $classnumber, false))
+           $classnumber++;
         $calc->makelex($tpl);
         $result = $calc->tplcalc('test' . $classnumber);
         if(empty($result)) return null;
-        $t = 'tpl_test' . $classnumber;
+        $t = $calc->namespace.'\test' . $classnumber;
         if ($show) echo $result . "\n\n";
-        file_put_contents($t.'.php',$result); include($t.'.php');
-//        eval ('?'.'>' . $result);
+//        file_put_contents($t.'.php',$result); include($t.'.php');
+        eval ('?'.'>' . $result);
         $tt = new $t();
         $x= $tt->$macro($data);
-        unlink($t.'.php');
+//        unlink($t.'.php');
         return $x;
     }
 
