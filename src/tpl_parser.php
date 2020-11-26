@@ -207,7 +207,7 @@ class tpl_parser
             'COMMENT_END' => '#}',
             'COMMENT_LINE' => '##',
             'trim' => true,
-            'COMPRESS_START_BLOCK' => false
+//            'COMPRESS_START_BLOCK' => true
         ));
         $this
             ->newOp2('_scratch_', 11, array($this, 'function_scratch'))
@@ -435,7 +435,13 @@ class tpl_parser
         }
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
         $types = array();
+        /**
+         *
+         */
         $triml=false;
+        /**
+         * Если на строке только операторы и пробельные символы - такая строка должна пропасть.
+         */
         $trimnl=false;
 
         // забираем лексемную регулярку
@@ -452,8 +458,19 @@ class tpl_parser
         ], '~:start_1::trim:?~sm',
             function ($line) use ($reg, $types,&$triml,&$trimnl) {
                // print_r($line);
+                $pasttrimln=$trimnl;
+                if(!empty($line['trim'])) {
+                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                    $line['trim']=false;
+                }
                 if($trimnl) {
-                    $line['_skiped'] = preg_replace('/^\s*?(\r?\n)([ \t]*\S)/', '\2',$line['_skiped']);
+                    // предыдущий оператор имел только пробелы перед символом начала строки
+                    // проверяем, что в строке есть только пробелы до перевода строки
+                    if(preg_match('/^\s*(\r?\n)/m',$line['_skiped'])){
+                        // удаляем пробелы в предыдущей лексеме и символы перевода строки в этой
+                        $line['_skiped']=preg_replace('/^\s*?(\r?\n)/','',$line['_skiped']);
+                    }
+                    //$line['_skiped'] = preg_replace('/^\s*?(\r?\n)([ \t]*\S)/', '\2',$line['_skiped']);
                     $trimnl=false;
                 }
                 if($triml && !empty($line['_skiped'])) {
@@ -462,26 +479,19 @@ class tpl_parser
                 }
 
                 if(!empty($line['bstart'])){
-                    if($this->isOption('COMPRESS_START_BLOCK')) {
-                        $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
-                    } else {
-                        $line['_skiped'] = preg_replace('/^\s*$/', '',
-                            preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']));
-                        $trimnl=($line['_skiped'][strlen($line['_skiped'])-1]=="\n");
-                    }
+                    $line['_skiped'] = //preg_replace('/^\s*$/', '',
+                        preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']);
+                    if(preg_match('/$/m',$line['_skiped']))
+                        $trimnl=true;
+                    else
+                        $trimnl=$pasttrimln;
                 }
                 if(!empty($line['xstart'])){
-                    $line['_skiped'] = preg_replace('/^\s*$/', '',
-                        preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']));
                     $trimnl=($line['_skiped'][strlen($line['_skiped'])-1]=="\n");
                 }
                 if(!empty($line['_skiped'])) {
                     $pos=$this->scaner->getpos();
                     $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
-                    if(!empty($line['trim'])) {
-                        $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
-                        $line['trim']=false;
-                    }
                     $this->lex[] = $this->oper($line['_skiped'], self::TYPE_STRING, $pos);
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
                     $line['_skiped']='';

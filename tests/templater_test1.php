@@ -68,10 +68,10 @@ class Test_Templater extends TestCase {
     }
     /**
      * тестируем оттранслированный шаблон
-     */
+     *
     function test_tpl_one(){
         $compiler=$this->compile_it('test');
-    }
+    }*/
 }
 
 ?>

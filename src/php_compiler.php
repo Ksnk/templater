@@ -10,6 +10,7 @@
  */
 
 namespace Ksnk\templater ;
+use Ksnk\templates\base as tpl_base;
 
 class php_compiler extends tpl_parser
 {
@@ -103,7 +104,7 @@ class php_compiler extends tpl_parser
      */
     function error($msgId, $lex = null)
     {
-        $mess = \tpl_base::pps($this->error_msg[$msgId], $msgId);
+        $mess = tpl_base::pps($this->error_msg[$msgId], $msgId);
         if (is_null($lex)) {
             $lex = $this->op;
         }
@@ -120,7 +121,7 @@ class php_compiler extends tpl_parser
 
             $mess .= sprintf("\n" . 'file: %s<br>line:%s, pos:%s lex:"%s"'
                 , self::$filename
-                , $line + 1, \tpl_base::pps($lex->pos, -1) - $lexpos, \tpl_base::pps($lex->val, -1));
+                , $line + 1, tpl_base::pps($lex->pos, -1) - $lexpos, tpl_base::pps($lex->val, -1));
         }
         throw new CompilationException($mess);
     }
