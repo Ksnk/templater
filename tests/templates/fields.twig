@@ -1,0 +1,633 @@
+################################################################
+##
+## макрокоманды для работы с полями
+##
+################################################################
+
+################################################################
+##
+## по структуре и значениям из поля заполнить табличку
+## бутстрапного вида
+##
+################################################################
+
+{% macro fillTable(el,struct) %}
+
+{% endmacro %}
+
+{% macro pager (total, perpage, page, url='#', sign='p',linkclass='', styles='') %}
+    ##
+    ##   Генерация страничной адресации
+    ##
+
+    {% if total >perpage -%}
+        <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm "{% if styles %} style="{{ styles }}"{% endif %}>
+        {%- set maxnumb= (total) // perpage
+            set start = page-3 %}
+        {%- if start>1 -%}
+        <li class="page-item"><a class="page-link{% if linkclass %} {{ linkclass }}{% endif %}" href="
+            {%- if start==2 -%}
+    {{ trim(url,'?&') }}
+            {%- else -%}
+    {{ url }}{{ sign }}={{ start-1 }}
+            {%- endif %}">&laquo;</a>&nbsp;
+        </li>
+    {%- endif -%}
+    {% for xpage in range(7,1) -%}
+        {% set pageX=start+xpage -%}
+        {%- if pageX>0 and pageX <= maxnumb -%}
+            {% if pageX == page -%}
+                <li class="page-item disabled"><a class="page-link{% if linkclass %} {{ linkclass }}{% endif %}" href="#">{{ pageX }}</a></li>
+            {%- elseif pageX==1 -%}
+                <li class="page-item"><a class="page-link{% if linkclass %} {{ linkclass }}{% endif %}" href="{{ trim(url,'?&') }}">{{ pageX }}</a>
+                </li>
+            {%- else -%}
+                <li class="page-item"><a class="page-link{% if linkclass %} {{ linkclass }}{% endif %}"
+                            href="{{ url }}{{ sign }}={{ pageX }}">{{ pageX }}</a></li>
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if pageX < maxnumb -%}
+        <li class="page-item"><a class="page-link{% if linkclass %} {{ linkclass }}{% endif %}" href="{{ url }}{{ sign }}={{ pageX+1 }}">&raquo;</a>
+        </li>
+    {%- endif -%}
+    ##{%- if total %}&nbsp;<span>Total:&nbsp;{{ total }}</span> {% endif %}
+        </ul></nav>
+    {%- endif -%}
+
+{%- endmacro %}
+
+{% macro tableview(xdata,fields,modelname) %}
+   ## {% set current=data.getbackpath() %}
+
+    <table class="table-striped  table-sm table-condensed table">
+        <thead>
+        <tr>
+            <th>поле</th>
+            <th>значение</th>
+        </tr>
+        </thead><tbody>
+        {% for n,v in fields %}
+            <tr><th>{{ v.title|default(n) }}</th>
+                {% if v.type=='rubric' %}
+                    <td data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}" data-val="{{ xdata[n] }}">
+                        {% set rubrics=callEx('Main','do_plugin','getrubricsbynodes','rubric',xdata[n]) %}
+
+                            <div class="dropdown float-right">
+                                <a href="#" class="pull-right dropdown-toggle empty" data-toggle="dropdown" aria-expanded="true"><span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                    <div class="dropdown-header">добавить рубрику</div>
+                                    <div class="dropdown-divider"></div>
+                                    {% set rubrick=callEx('Main','do_plugin','getdata','rubric') %}
+                                    {% for row in rubrick %}{% if not(rubrics[row.node]) %}
+                                    <a class="dropdown-item" href="#" data-handle="plugin.action:insert" data-addr="rubric:{{ row.node }}" data-val="{{ modelname }}:{{ xdata.node|default(xdata.id) }}">{{ row.descr }}:{{ row.node }}</a>
+                                    {% endif %}{% endfor %}
+                                 </div>
+                            </div>
+                        {% for i,n in rubrics %} <span class="badge badge-primary">{{ n.name }}:{{ i }}<span class="badge badge-light" data-handle="plugin.action:remove" data-addr="rubric:{{ n.rubrick }}" data-val="{{ modelname }}:{{ xdata.node|default(xdata.id) }}" title="удалить тег">x</span></span> {% endfor %}
+
+                    </td>
+                {% elseif v.type=='usergroup' %}
+                    <td data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}">
+                        {% set groups=callEx('Main','do_plugin','getgroups','usergroup',modelname~':'~(xdata.node|default(xdata.id))) %}
+
+                        <div class="dropdown">
+                            <a href="#" class="pull-right dropdown-toggle empty" data-toggle="dropdown" aria-expanded="true"><span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></a>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li class="dropdown-header">добавить группу</li>
+                                <li class="divider"></li>
+                                {% set allgroup=callEx('Main','do_plugin','getdata','usergroup') %}
+                                {% for row in allgroup %}{% if not(groups[row.node]) %}
+                                    <li><a href="#" data-handle="plugin.action:insert" data-addr="usergroup:{{ row.node }}" data-val="{{ modelname }}:{{ xdata.node|default(xdata.id) }}">{{ row.descr }}:{{ row.node }}</a></li>
+                                {% endif %}{% endfor %}
+                            </ul>
+                        </div>
+                        {% for i,n in groups %} <span class="label label-primary">{{ n.name }}:{{ i }}<span class="badge"  data-handle="plugin.action:remove" data-addr="usergroup:{{ n.id }}">x</span></span> {% endfor %}
+
+                    </td>
+                {% elseif v.type=='right' %}
+                    <td data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}">+
+                            {% for k,vv in ['A','B','C','D'] %}
+                            <span class="states" data-handle="xstate" data-states='[{"val":0},{"val":{{ 2**k }},"class":"greenbg"}]' data-val="{{ xdata[n] & 2**k }}">{{ vv|default('без проверки') }}</span>
+                            {% endfor %}
+                           - {% for k,vv in ['A','B','C','D'] %}
+                            <span class="states" data-handle="xstate" data-states='[{"val":0},{"val":{{ 2**(8+k) }},"class":"redbg"}]' data-val="{{ xdata[n] & (2**(8+k)) }}">{{ vv|default('без проверки') }}</span>
+                            {% endfor %}
+
+                        =CRUD
+                    </td>
+                {% elseif v.type=='html_edit' %}
+                <td>{{ html_edit(xdata,n,modelname) }}</td>
+                {% else %}
+                <td {# -#}
+                    data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}"
+                        {%- if not v.uneditable %} data-handle="text.edit" class="editable"
+                        {% elseif v.type=='upload' %} class="uploader"
+                        {%- endif -%}
+                >{{ xdata[n] }}</td>
+                {%- endif -%}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% macro systableview(xdata,fields,modelname) %}
+    <table class="table-condensed  table-sm table table-striped">
+        <thead>
+        <tr>
+            <th>поле</th>
+            <th>значение</th>
+        </tr></thead><tbody>
+        {% for n,v in xdata %}
+        <tr>
+            {% set field=fields[n]|default(fields['*']) %}
+            <th>{{ field.title|default(n) }}</th>
+            {% if field.type=='action'%}
+            <td data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}">
+                {% for k,vv in ['A','B','C','D'] %}
+                <span class="states" data-handle="xstate" data-states='[{"val":0},{"val":{{ 2**k }},"class":"greenbg"}]' data-val="{{ v & 2**k }}">{{ vv|default('без проверки') }}</span>
+                {% endfor %}
+            </td>
+            {% elseif field.type=='html_edit' %}
+            <td>{{ html_edit(xdata,n,modelname) }}</td>
+            {% else %}
+            <td data-addr="{{ modelname }}:{{ xdata.node|default(xdata.id) }}:{{ n }}"
+                {%- if not field.uneditable %}  data-handle="text.edit" class="editable"
+                {%- elseif field.type=='upload' %} class="uploader"
+                {%- endif -%}
+                    >{{ v }}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody><tfoot>
+        <tr>
+            <td class="editable" data-handle="appendname:{{ modelname }}:{{ xdata.node|default(xdata.id) }}">Добавить поле</td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+
+{% endmacro %}
+
+{% macro listfields(data,plugindata,fields,modelname,f,_xlink,page,perpage) %}
+    <table class="table table-striped table-sm table-condensed sortable"{% if data.filter_id %} data-filterid="{{ data.filter_id }}"{% endif %} data-filter='{{ data.defaultfilter|json_encode }}'>
+        <thead >
+        <tr>
+            <th></th>
+            {% for v in f %}
+                {% set sort=data.filter['~'] %}
+                <th title="{{ v }}" data-key="{{ v }}"><span class="sort_updn{% if sort[v] %}{% if sort[v]=='last'%} up{% else %} dn{% endif %}{% endif %}"></span>{{ fields[v].title|default(v) }}</th>
+            {% endfor %}
+            {% if data.elbuton %}{{ repeat('<th></th>',length(data.elbuton)) }}{% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in plugindata %}
+            <tr>
+                <td><a href="{{ _xlink ~'id='~row.id }}"><span class="glyphicon glyphicon-list-alt"></span></a></td>
+                {% for v in f %}
+                    {% if fields[v].type=='html_edit' %}
+                    <td>{{ html_edit(row, v,modelname) }}</td>
+                    {% else %}
+                    <td data-addr="{{ modelname }}:{{ row.id }}:{{ v }}"
+                            {%- if not fields[v].uneditable %} data-handle="text.edit" class="editable"
+                            {% elseif fields[v].type=='upload' %} class="uploader"
+                            {%- endif -%}
+                    >{{ row[v] -}}
+                    </td>
+                    {% endif %}
+                {% endfor %}
+                {% for n,but in data.elbuton %}
+                    <td><span class="glyphicon {{ but.glyph }}"
+                              data-addr="{{ modelname }}:{{ row.node|default(row.id) }}"
+                                {% if but.confirm %} data-confirm='{{ but.confirm|json_encode }}'{% endif %}
+                              data-handle="plugin.action:{{ n }}" title="{{ but.title | default(n) }}"></span></td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr><th></th><td colspan="{{ length(f)  +length(data.elbuton) }}">всего: {{ data.total() }}, показано: {{ min(perpage,data.total()-(page-1) * perpage) }}, начиная с: {{ (page-1) * perpage  |default('0') }} </td></tr>
+        </tfoot>
+    </table>
+{% endmacro %}
+
+{% macro treefields(data,fields,modelname,f,_xlink,id) %}
+    {% set  plugindata=data.getdata(0,10000) %}
+    {% set  closed=1000 %}
+    <div style="max-height:500px;overflow:auto">
+    <table class="table table-sm table-condensed" style="table-layout: fixed;">
+        <colgroup>
+            <col width="auto">
+            {% if data.elbuton %}{{ repeat('<col width="20px">',length(data.elbuton)) }}{% endif %}
+        </colgroup>
+        {% if id<0 %}
+        {% set current=[0,0-id] %}
+        {% else %}
+        {% set current=data.backpath(id) %}
+        {% endif %}
+        {% for row in plugindata %}
+            <tr data-level="{{ row.level }}" class="{% if in_array(row.node,current) %}open active{% set closed=row.level+1 %}
+                    {%- elseif closed>row.level %}{% set closed=row.level %}
+                    {%- endif %}
+{% if closed<row.level %} closed{% endif %}">
+                <td>
+                    {{- repeat('<span class="space">',row.level) }}
+                    {%- if row.childs>1 %}<span data-handle="treeopenclose" class="glyphicon glyphicon-triangle-right"></span>{%- endif %}
+                    <a href="{{ _xlink ~'id='~row.node }}">{{- row.element }}:{{- row.descr }}:{{- row.node }}</a>
+                    {{- repeat('</span>',row.level) -}}
+                </td>
+                {% for n,but in data.elbuton %}
+                <td><span class="glyphicon {{ but.glyph }}"
+                          data-addr="{{ modelname }}:{{ row.node }}"
+                          {% if but.confirm %} data-confirm='{{ but.confirm|json_encode }}'{% endif %}
+                          data-handle="plugin.action:{{ n }}" title="{{ but.title | default(n) }}"></span></td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+{% endmacro %}
+
+{% macro pagefields(data,plugindata,modelname,f,_xlink,id) %}
+    ## базовая рамка разметки 0-ширина элемента D&D, 1- ширина заголовка, 2 - внутренний элемент - картинка, если надо,
+    ##  3 - внутренний элемент подпись, 4- финишный элемент "выравнивание", 5- финишный элемент "закрыть"
+    ## во вставных таблицах первые 2 и последний столбики не используются
+    {% set tableRange=[23, 90, 125, 50 , 25, 23] %}
+    <div class="col-md-12 thetable"><form method="post" action="?" style="margin:0;">
+        <table class="fixed long">
+            <tr>
+                <td class="bwhite">
+                    ## заголовочный элемент таблицы контента
+                    <table class="fixed long size11">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th style="padding: 0 2px"></th>
+                            <th title="Не отображается на сайте">Элемент</th>
+                            <th>Содержимое</th>
+                            <th></th>
+                        </tr>
+                        </tbody>
+                    </table>
+            {% for id,el in plugindata %}
+                {% if el.level==1 %}
+                    {% set _odd= loop.cycle(['odd ','even ']) %}
+                    <div class="droppable" data-order="{{ loop.index0 }}"></div>
+                {% endif %}
+                {% if id==0 %}
+                {% elseif el.element=='title' %}
+                    ## заголовок
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }}solo ctext size11 long fixed draggable">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="{{ tableRange[4] }}px">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th><div class="win_max open_close dragstart"></div></th>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:name" data-handle="text.edit" title="тип:Заголовок">{{ el.name| default('Заголовок') }}</td>
+                            <td title="Текст заголовка">
+                                <div class="shaddow_container editable" data-addr="{{ modelname }}:{{ el.node }}:descr" data-handle="text.edit">{{ el.descr }}</div></td>
+                            <td class="align_center" data-par="noreload" data-addr="{{ modelname }}:{{ el.node }}:align" style="padding:0 2px;">{{ align_sign(el) }}</td>
+                            <th class="align_center" style="padding:0 2px;">
+                                {{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                {% elseif el.element=='news' %}
+                    ## заголовок
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }}solo ctext size11 long fixed draggable">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th><div class="win_max open_close dragstart"></div></th>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:name" data-handle="text.edit" title="тип:Новости">{{ el.name| default('Новости') }}</td>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:descr" data-handle="text.edit"
+                                title="Строковый фильтр для поиска новостей">{{ el.descr }}</td>
+                            <th class="align_center" style="padding:0 2px;">
+                                {{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                {% elseif el.element=='books' %}
+                    ## заголовок
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }}solo ctext size11 long fixed draggable">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th><div class="win_max  open_close dragstart"></div></th>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:name" data-handle="text.edit" title="тип:Книги">{{ el.name| default('Книги') }}</td>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:descr" data-handle="text.edit"
+                                title="Строковый фильтр для поиска книг">{{ el.descr }}</td>
+                            <th class="align_center" style="padding:0 2px;">
+                                {{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                {% elseif el.element=='text' %}
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }}solo tahoma draggable ctext size11 long fixed">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="40px">
+                            <col width="125px">
+                            <col width="{{ tableRange[4] }}px">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tr>
+                            <th class="nopage align_center" style="padding:0 2px;">
+                                <div class="win_max  open_close dragstart"></div>
+                            </th>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:name" data-handle="text.edit" title="тип:Текст">{{ el.name| default('Текст') }}</td>
+
+                            <td >{{ html_edit(el,'text',modelname) }}</td>
+                            <td title="Рамка">{{ checkbox_field(el,'border',modelname) }}</td>
+                            <td class="uploader action_both">
+                                <input type="button" class="button green" value="Доб.Фото">
+                            </td>
+
+                            <td data-par="noreload" class="align_center" data-addr="{{ modelname }}:{{ el.node }}:align" style="padding:0 2px;">{{ align_sign(el) }}</td>
+                            <th class="align_center" style="padding:0 2px;">{{ point3(el,modelname) }}</th>
+                        </tr>
+                    </table>
+                    ## картинка
+                {% elseif el.element=='photo' %}
+
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }} tahoma ctext size11 long fixed">
+                        <colgroup>
+                            <col width="{{ tableRange[0]+tableRange[1] }}px">
+                            <col width="{{ tableRange[2] }}px">
+                            <col width="{{ tableRange[3] }}px">
+                            <col width="50%">
+                            <col width="50%">
+                            <col width="{{ tableRange[4] }}px">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tr class="bwhite">
+                            <td class="bwhite" rowspan=3></td>
+                            <td rowspan="3">
+                                <img alt="" onload="checkImg(this,120,100)" title="просмотр маленькой картинки"
+                                     src="../uploaded/pirogov.jpg" style="width: 72px; height: 100px;">
+                            </td>
+                            <td align="right">мал.</td>
+                            <td class="uploader">
+                                <input name="pic_small_55057" type="text" value="uploaded/pirogov.jpg"
+                                       style="overflow:hidden;width:100%" title="вставьте маленькую картинку">
+                            </td>
+                            <td width="100px">108x150</td>
+                            <th class="align_center" rowspan="3" style="padding:0 2px;">{{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        <tr>
+                            <td align="right">бол.</td>
+                            <td class="uploader">
+                                <input name="pic_big_55057" type="text" value="uploaded/pirogov.jpg"
+                                       style="overflow:hidden;width:100%;" title="вставьте большую картинку">
+                            </td>
+                            <td width="100px">108x150</td>
+                        </tr>
+                        <tr>
+                            <td align="right">Опис.</td>
+                            <td>
+                                <input name="pic_comment_55057" type="text" value=""
+                                       style="overflow:hidden;width:100%;" onkeydown="need_Save()"
+                                       title="название картинки"></td>
+                            <td>
+                                <input name="item_url_55057" type="text" value=""
+                                       class="nocontext long link_toolbox" title="Ссылка"></td>
+                        </tr>
+                    </table>
+                    ## описание
+                {% elseif el.element=='page' %}
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }} tahoma ctext size11 long fixed">
+                        <colgroup>
+                            <col width="{{ tableRange[0]+tableRange[1] }}px">
+                            <col width="125px">
+                            <col width="auto">
+                            <col width="{{ tableRange[4] }}px">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tr class="bwhite " style="">
+                            <td class="bwhite"></td>
+                            <td>
+                                <input type="button" class="button green" value="Ред.Описание" data-addr="{{ modelname }}:{{ el.node }}:page" data-handle="page.gotopage"></td>
+                            <td class="editable" data-addr="{{ modelname }}:{{ el.node }}:text" data-handle="text.edit" title="Название ссылки">{{ el.text| default('ссылка') }}</td>
+
+                            <th class="align_center" style="padding:0 2px;">{{ point3(el,modelname) }}</th>
+                        </tr>
+                    </table>
+                {% elseif el.element=='gallery' %}
+                    <table data-order="{{ modelname }}:{{ el.node }}:{{ loop.index0 }}" class="{{ _odd }}solo draggable ctext size11 long fixed">
+                        <colgroup>
+                            <col width="23px">
+                            <col width="90px">
+                            <col width="auto">
+                            <col width="auto">
+                            <col width="auto">
+                            <col width="auto">
+                            <col width="auto">
+                            <col width="auto">
+                            <col width="125px">
+                            <col width="25px">
+                            <col width="23px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th class="nopage align_center" style="padding:0 2px;">
+                                <div class="win_max open_close dragstart">&nbsp;</div>
+                            </th>
+                            <td class="text_edit" id="name_44817" title="тип:Галерея">Галерея</td>
+                            <td id="item_name_44817"
+                                style="width:90px;padding-right:0;padding-left:0px;margin:0;"
+                                title="Кол-во столбцов">
+                                <nobr><span style="margin-left:10px;">Столбцы </span> <input
+                                            name="item_columns_44817" type="text" value="3"
+                                            onkeydown="need_Save()" style="width:20px;"></nobr>
+                            </td>
+                            <td id="item_name_44817"
+                                style="width:125px;border-right:none;padding-left:0;padding-right:0;margin:0;"
+                                title="Размер мал. фото (px)">
+                                <nobr><span style="margin-left:10px;">Мал.</span> <input name="w_s_44817"
+                                                                                         type="text" value="15"
+                                                                                         onkeydown="need_Save()"
+                                                                                         style="width:35px;">
+                                </nobr>
+                                <nobr>x <input name="h_s_44817" type="text" value="15" onkeydown="need_Save()"
+                                               style="width:35px;"></nobr>
+                            </td>
+                            <td style="width:0;padding:0;"></td>
+                            <td id="item_name_44817"
+                                style="width:125px;border-right:none;padding-left:0;padding-right:0;margin:0;"
+                                title="Размер бол. фото (px)">
+                                <nobr><span style="margin-left:10px;">Бол.</span> <input name="w_b_44817"
+                                                                                         type="text" value="15"
+                                                                                         onkeydown="need_Save()"
+                                                                                         style="width:35px;">
+                                </nobr>
+                                <nobr>x <input name="h_b_44817" type="text" value="15" onkeydown="need_Save()"
+                                               style="width:35px;"></nobr>
+                            </td>
+                            <td style="width:0;padding:0;"></td>
+
+
+                            <td title="Рамка"><input name="border_44817" type="text" value="1" class="win_check"
+                                                     style="display: none;">
+                                <input type="checkbox" value="1" checked="checked"></td>
+                            <td>
+                                <div class="uploader action_both">
+                                    <input type="button" class="button green" value="Доб.Фото"
+                                           onclick="NewGalleryImg(this,false);"></div>
+                            </td>
+                            <td class="align_center" style="padding:0 2px;">
+                                <input name="item_align_44817" type="text" value="1" class="align hidden">
+                                <input type="button" title="выравнивание" class="win_align"
+                                       style="background-position: -72px 0px;"></td>
+
+                            <th class="align_center" style="padding:0 2px;">{{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+                    ## вложенная картинка
+
+                {% else %}
+                    <table class="{{ _odd }}tahoma ctext size11 long fixed">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="25px">
+                            <col width="{{ tableRange[3] }}px">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th></th>
+                            <td class="text_edit" id="name_10535" title="тип:Заголовок">Неведомый тип</td>
+                            <td class="text_edit" id="item_text_10535" title="Текст заголовка">Новое на сайте
+                            </td>
+                            <td class="align_center" style="padding:0 2px;">
+                                <input name="item_align_10535" type="text" value="1" class="align hidden">
+                                <input type="button" title="выравнивание" class="win_align"
+                                       style="background-position: -72px 0px;"></td>
+                            <th class="nopage align_center" style="padding:0 2px;" nowrap="">
+                                <table class="compact">
+                                    <tbody>
+                                    <tr>
+                                        <td><input type="button" class="win_max p120"
+                                                   onclick="order(this,'+');">
+                                        </td>
+                                        <td>
+                                            <input name="item_order_10535" type="text" value=""
+                                                   class="order size11" onkeydown="need_Save()"
+                                                   style="width:15px;">
+                                        </td>
+                                        <td>
+                                            <input type="button" class="win_max p105"
+                                                   onclick="order(this,'-');">
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </th>
+                            <th class="align_center" style="padding:0 2px;">{{ point3(el,modelname) }}
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if loop.last %}
+                    <div class="droppable" data-order="{{ loop.index }}"></div>
+                    <table class="fixed long size11">
+                        <colgroup>
+                            <col width="{{ tableRange[0] }}px">
+                            <col width="{{ tableRange[1] }}px">
+                            <col width="auto">
+                            <col width="{{ tableRange[5] }}px">
+                        </colgroup>
+                        <tbody>
+                        <tr>
+                            <th style="padding: 0 2px"></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endfor %}
+                </td>
+            </tr>
+        </table></form>
+    </div>
+{% endmacro %}
+
+{% macro point3(el,modelname) %}
+<div class="dropdown">
+                    <a href="#" class="dropdown-toggle empty" data-toggle="dropdown" aria-expanded="true"><span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></a>
+<div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+{% if el.element=='text' %}
+    <div class="dropdown-header">Текст</div>
+    <a class="dropdown-item" href="#" data-addr="{{ modelname }}:{{ el.node }}" data-handle="page.insert:photo">Добавить Фото</a>
+    <a class="dropdown-item" href="#" data-addr="{{ modelname }}:{{ el.node }}" data-handle="page.insert:doc">Добавить Документ</a>
+    <a class="dropdown-item" href="#" data-addr="{{ modelname }}:{{ el.node }}" data-handle="page.insert:file">Добавить Файл</a>
+    <a class="dropdown-item" href="#" data-addr="{{ modelname }}:{{ el.node }}" data-handle="page.insert:page">Добавить Страницу</a>
+{% else %}
+    <div class="dropdown-header">{{ el.element }}</div>
+{% endif %}
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#">Копировать элемент</a>
+    <a class="dropdown-item" href="#">Вырезать элемент</a>
+    <a class="dropdown-item" href="#">Вставить элемент</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#">Опубликовать</a>
+    <a class="dropdown-item" href="#" data-addr="{{ modelname }}:{{ el.node }}" data-handle="plugin.action:delete">Удалить элемент</a>
+</div>
+                </div>
+{% endmacro %}
+
+{% macro align_sign(el) %}
+{% set align=['align-left','align-right','align-center','align-justify'] %}
+{% set v=default(el.align,0) %}
+    <span class="states glyphicon " data-handle="xstate" data-states='[
+    {%- for k,a in align %}{"val":{{ k }},"class":"glyphicon-{{ a }}"}{% if not loop.last %},{% endif %}{% endfor %}]' data-val="{{ v }}" aria-hidden="true"></span>
+{% endmacro %}
+
+{% macro checkbox_field(el,name,modelname) %}
+    <input type="checkbox" data-addr="{{ modelname }}:{{ el.node }}:{{ name }}" data-par="noreload" data-handle="page.input" value="1"{% if el[name] %} checked="checked"{% endif %}">
+{% endmacro %}
+
+{% macro html_edit(el,text,module='node') %}
+    <div class="html_edit shaddow_container editable" data-addr="{{ module|default('node') }}:{{ el.node|default(el.id) }}:{{ text }}" data-handle="text.edit">{{ el[text]|e }}</div>
+{% endmacro %}
+

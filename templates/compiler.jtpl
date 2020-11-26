@@ -13,7 +13,9 @@
  * this file is created automatically at "{{ now('d M Y G:i') }}". Never change anything,
  * for your changes can be lost at any time.
  */
-{% if namespace %}namespace {{ namespace }};{% endif %}
+{% if namespace %}namespace {{ namespace }};
+{% if basenamespace and basenamespace!=namespace %}use \{{basenamespace}}\base;{% endif %}
+{% endif %}
 
 class {% if not namespace %}tpl_{% endif %}{{name}} extends {% if not namespace %}tpl_{% endif %}{{ `extends` |default('base') }} {
 {% if extern %}

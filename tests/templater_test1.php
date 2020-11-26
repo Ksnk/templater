@@ -55,14 +55,14 @@ class Test_Templater extends TestCase {
         $compiler=$this->compile_it('test1','test');
         $compiler1=$this->compile_it('test2','test1');
         //if(!empty($_GET['compile'])){
-        $s=str_replace('class tpl_test2','class tpl_compiler',$compiler1);
+        $s=str_replace('class test2','class compiler',$compiler1);
         if(!empty($s)){
             echo 'xxx!';
-            file_put_contents ('../templates/tpl_compiler.php',$s);
+            file_put_contents ('../templates/compiler.php',$s);
         }
         //}
         $this->assertEquals(
-            str_replace('tpl_test1','tpl_test2',$compiler)
+            str_replace('test1','test2',$compiler)
             ,$compiler1
         );
     }

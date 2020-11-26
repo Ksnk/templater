@@ -179,6 +179,7 @@ class tpl_parser
         $op = null,
 
         $namespace='',
+        $basenamespace='',
         /**
          * @var scaner
          */
@@ -435,6 +436,7 @@ class tpl_parser
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
         $types = array();
         $triml=false;
+        $trimnl=false;
 
         // забираем лексемную регулярку
         $reg = $this->get_reg($types);
@@ -448,18 +450,30 @@ class tpl_parser
             'start_1' => ':start_0:|:bstart:',
             'trim' => preg_quote('-'),
         ], '~:start_1::trim:?~sm',
-            function ($line) use ($reg, $types,&$triml) {
+            function ($line) use ($reg, $types,&$triml,&$trimnl) {
                // print_r($line);
+                if($trimnl) {
+                    $line['_skiped'] = preg_replace('/^\s*?(\r?\n)([ \t]*\S)/', '\2',$line['_skiped']);
+                    $trimnl=false;
+                }
                 if($triml && !empty($line['_skiped'])) {
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
                     if($line['_skiped']!='') $triml=false;
                 }
+
                 if(!empty($line['bstart'])){
                     if($this->isOption('COMPRESS_START_BLOCK')) {
                         $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
                     } else {
-                        $line['_skiped'] = preg_replace('/^\s*\r?\n?$/', '', preg_replace('/(\r?\n)\s*?$/', '\1',$line['_skiped']));
+                        $line['_skiped'] = preg_replace('/^\s*$/', '',
+                            preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']));
+                        $trimnl=($line['_skiped'][strlen($line['_skiped'])-1]=="\n");
                     }
+                }
+                if(!empty($line['xstart'])){
+                    $line['_skiped'] = preg_replace('/^\s*$/', '',
+                        preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']));
+                    $trimnl=($line['_skiped'][strlen($line['_skiped'])-1]=="\n");
                 }
                 if(!empty($line['_skiped'])) {
                     $pos=$this->scaner->getpos();
@@ -809,6 +823,9 @@ class tpl_parser
         $tag = array('tag' => 'class', 'import' => array(), 'macro' => array(), 'name' => $class, 'data' => array());
         if($this->namespace){
             $tag['namespace']=$this->namespace;
+            if($this->basenamespace){
+                $tag['basenamespace']=$this->basenamespace;
+            }
         }
 
         $this->opensentence[] = &$tag;
@@ -842,7 +859,9 @@ class tpl_parser
     {
         static $tpl_compiler;
         if (!empty($tpl_class) || empty($tpl_compiler)) {
-            if($this->namespace)
+            if($this->basenamespace)
+                $tpl_compiler = '\\' .$this->basenamespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
+            elseif($this->namespace)
                 $tpl_compiler = '\\' .$this->namespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
             else
                 $tpl_compiler = 'tpl_' . tpl_base::pps($tpl_class, 'compiler');

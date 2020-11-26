@@ -57,6 +57,9 @@ class template_compiler
             $ns=self::options('namespace');
             if(!empty($ns))
                 $calc->namespace=$ns;
+            $bns=self::options('basenamespace');
+            if(!empty($bns))
+                $calc->basenamespace=$bns;
             $result = $calc->tplcalc($name, $tpl_class);
         } catch (CompilationException $e) {
             echo $e->getMessage();
@@ -82,8 +85,6 @@ class template_compiler
 
         $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
 
-        if (!class_exists('tpl_base'))
-            include_once (self::options('templates_dir') . DIRECTORY_SEPARATOR . 'tpl_base.php');
         //$time = microtime(true);
         $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
         //print_r('xxx'.$templates);echo " !";
@@ -92,7 +93,7 @@ class template_compiler
         if (!empty($templates)) {
             foreach ($templates as $v) {
                 $name = str_replace('.','_',basename($v, "." . $ext));
-                $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . 'tpl_' . $name . '.php';
+                $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . $name . '.php';
                 $force=self::options('FORCE');
                 $NLBR=php_sapi_name() == "cli"?"\n":"<br>\n";
                 if (

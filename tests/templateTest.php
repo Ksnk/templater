@@ -91,136 +91,6 @@ class templateTest extends TestCase
     }
 */
 
-    function test_test29(){
-        $s="tpl_{{`extends` |default('base') }}";
-        $pattern = 'tpl_yyy';
-        $this->assertEquals(
-            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false), $pattern
-        );
-    }
-
-    function test_test30(){
-        $s="class tpl_{{ext+min(5,4,3)}}";
-        $pattern = 'class tpl_9';
-        $this->assertEquals( $pattern,
-            $this->_test_cmpl($s, ['name'=>'xxx', 'ext'=>'6'],false)
-        );
-    }
-
-    function test31(){
-        $s='####################################################################
-##
-##  файл шаблонов для шаблонизатора
-##
-####################################################################
-
-####################################################################
-## class
-##
-{%- block class -%}
-<?php
-/**
- * this file is created automatically at "{{ now(\'d M Y G:i\') }}". Never change anything,
- * for your changes can be lost at any time.
- */
-{# ## don\'t need includes any more
-{% if extends %}
-include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{extends}}.php\';
-{% else %}
-include_once \'tpl_base.php\';
-{% endif %}
-
-{% for imp in import -%}
-require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{imp}}.php\';
-{% endfor %}
-#}
-class tpl_{{name}} extends tpl_{{`extends` |default(\'base\') }}
-{%endblock%}';
-        $pattern = '
-<?php
-/**
- * this file is created automatically at "'.date('d M Y G:i').'". Never change anything,
- * for your changes can be lost at any time.
- */
-
-class tpl_xxx extends tpl_yyy';
-        $this->assertEquals( $pattern,
-            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false)
-        );
-    }
-
-    function test_test28(){
-        $s="class tpl_{{5+min(5,4,3)}}";
-        $pattern = 'class tpl_8';
-        $this->assertEquals( $pattern,
-            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'6'],false)
-        );
-    }
-
-    /** test extends-parent  */
-    function test_test26()
-    {
-        $data = array('data' => '<<<>>>');
-        $s = '
-{% extends "test.php"%}
-{% block test %} <table>
-	{% for x in [1,2] %}
-	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
-	one</td><td>two</td></tr>
-	{% endfor %}
-	</table> {{parent()}}{% endblock %}
-	{{test()}} ';
-        $pattern = ' <table>
-	<tr class="odd"><td>1</td><td>
-	one</td><td>two</td></tr>
-	<tr class="even"><td>2</td><td>
-	one</td><td>two</td></tr>
-	</table> Calling parent test! Ok! ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data,false,'_test'), $pattern
-        );
-    }
-
-    /** test extends-parent  */
-    function test_test27()
-    {
-        $s = '##
-##   Генерация страничной адресации
-##
-{% macro paging(pages)%}
-{% if pages -%}
-<div class="paging">
-        {%- set maxnumb= (pages.total) // pages.perpage
-           set start = pages.page-3
-           if start>0 -%}
-            <a href="{{pages.url}}page=prev">&lt;&lt;</a>&nbsp;
-        {%- endif -%}
-
-        {%- for xpage in range(7,1) -%} {% set page=start+xpage -%}
-        {% if page>0 and page <= maxnumb -%}
-        {% if page == pages.page -%}
-        <span>{{page}}</span>&nbsp;
-        {%- else -%}
-        <a href="{{pages.url}}page={{page}}">{{page}}</a>&nbsp;
-        {%-  endif endif  endfor -%}
-        {%- if page < maxnumb -%}
-            <a href="{{pages.url}}?page=next">&gt;&gt;</a>&nbsp;
-        {%- endif -%}
-        {%- if pages.total%}<span>Всего: {{pages.total}}</span>{% endif -%}
-        </div>
-{% endif -%}
-{% endmacro -%}';
-        $pattern = '<div class="paging"><a href="http:xxx.com/xxx?page=prev">&lt;&lt;</a>&nbsp;<a href="http:xxx.com/xxx?page=2">2</a>&nbsp;<a href="http:xxx.com/xxx?page=3">3</a>&nbsp;<a href="http:xxx.com/xxx?page=4">4</a>&nbsp;<span>5</span>&nbsp;<a href="http:xxx.com/xxx?page=6">6</a>&nbsp;<a href="http:xxx.com/xxx?page=7">7</a>&nbsp;<a href="http:xxx.com/xxx?page=8">8</a>&nbsp;<a href="http:xxx.com/xxx??page=next">&gt;&gt;</a>&nbsp;<span>Всего: 144</span></div>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, array('pages'=>array(
-                'total'=>144,
-                'perpage'=>15,
-                'url'=>"http:xxx.com/xxx?",
-                'page'=>5,
-            )),false,'_paging'), $pattern
-        );
-    }
-
     function testCallObject()
     {
         $data = array('main' => $GLOBALS['engine'], 'data' => '<<<>>>');
@@ -228,81 +98,6 @@ class tpl_xxx extends tpl_yyy';
         {{ main.test (1,2,3) }} ';
         $pattern = '
         1+2+3 ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-    function test_test16()
-    {
-        $data = array('data' => array());
-        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
-    <input type="{{ type }}" name="{{ name }}" value="{{
-        value|e }}" size="{{ size }}">
-{%- endmacro -%}
-<p>{{ input(\'username\') }}</p>
-<p>{{ input(\'password\', type=\'password\') }}</p>';
-        $pattern = '<p><input type="text" name="username" value="" size="20"></p>
-<p><input type="password" name="password" value="" size="20"></p>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-    function test_test13()
-    {
-        $data = array();
-        $s = '
-        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
-    {{ loop.index }}{{ item }}{{ loop.revindex }}{{ item }}
-{%- endfor %}';
-        $pattern = '1on\\e\'s 2on\\e\'s 2one"s 1one"s ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-    function test_test25()
-    {
-        $data = array(
-            'topics' => array(
-                'topic1' => array('Message 1 of topic 1', 'Message 2 of topic 1'),
-                'topic2' => array('Message 1 of topic 2', 'Message 2 of topic 2'),
-            ));
-        $s = '{% for topic, messages in topics %}
-       * {{ loop.index }}: {{ topic }}
-     {% for message in messages %}
-         - {{ loop.parent.loop.index }}.{{ loop.index }}: {{ message }}
-     {% endfor %}
-   {% endfor %}';
-        $pattern = '
-       * 1: topic1
-         - 1.1: Message 1 of topic 1
-         - 1.2: Message 2 of topic 1
-       * 2: topic2
-         - 2.1: Message 1 of topic 2
-         - 2.2: Message 2 of topic 2';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-
-    function test_test18()
-    {
-        $data = array('data' => '<<<>>>');
-        $s = ' <table>
-	{% for x in [1,2] %}
-	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
-	one</td><td>two</td></tr>
-	{% endfor %}
-	</table>';
-        $pattern = ' <table>
-	<tr class="odd"><td>1</td><td>
-	one</td><td>two</td></tr>
-	<tr class="even"><td>2</td><td>
-	one</td><td>two</td></tr>
-	</table>';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -319,40 +114,6 @@ class tpl_xxx extends tpl_yyy';
         );
     }
 */
-    function test_test10()
-    {
-        $data = array();
-        //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
-        $s = '{#
-        it\'s a test
-        #}
-
-        {% for item in [1,2,3,4,5,6,7,8,9] -%}
-    {{ item }}
-{%- endfor %}';
-        $pattern = '123456789';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
-
-    /**
-     * тесты на тег FOR
-     */
-    function test_test12()
-    {
-        $data = array();
-        $s = '
-        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
-    {% if loop.first %}{{ item }}{% endif -%}
-    {% if loop.last %}{{ item }}{% endif -%}
-    {{ item }}
-{%- endfor %}';
-        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
-        );
-    }
 
     function testLipsum()
     {
@@ -392,8 +153,8 @@ class tpl_xxx extends tpl_yyy';
   <li>one</li>
   <li>two</li>
 </ul>';
-        $this->assertEquals(
-            $this->_test_cmpl($s, $data), $pattern
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, $data)
         );
     }
 
@@ -402,9 +163,9 @@ class tpl_xxx extends tpl_yyy';
         $data = array('users' => array(array('username' => 'one'), array('username' => 'two')));
         $s = '<h1>Members</h1>
 <ul>
-    {%- for user in users %}
+    {% for user in users %}
   <li>{{ user.username|e }}</li>
-{%- endfor %}
+{% endfor %}
 </ul>';
         $pattern = '<h1>Members</h1>
 <ul>
@@ -522,6 +283,23 @@ class tpl_xxx extends tpl_yyy';
         );
     }
 
+    function test_test10()
+    {
+        $data = array();
+        //$data=array('users'=>array(array('username'=>'one'),array('username'=>'two')));
+        $s = '{#
+        it\'s a test
+        #}
+
+        {% for item in [1,2,3,4,5,6,7,8,9] -%}
+    {{ item }}
+{%- endfor %}';
+        $pattern = '123456789';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
     function test_test11()
     {
         $data = array();
@@ -534,6 +312,37 @@ class tpl_xxx extends tpl_yyy';
     {{ item }}
 {%- endfor %}';
         $pattern = 'on\\e\'s one"s ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    /**
+     * тесты на тег FOR
+     */
+    function test_test12()
+    {
+        $data = array();
+        $s = '
+        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
+    {% if loop.first %}{{ item }}{% endif -%}
+    {% if loop.last %}{{ item }}{% endif -%}
+    {{ item }}
+{%- endfor %}';
+        $pattern = 'on\\e\'s on\\e\'s one"s one"s ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    function test_test13()
+    {
+        $data = array();
+        $s = '
+        {%- for item in ["on\\\\e\'s ","one\"s "] -%}
+    {{ loop.index }}{{ item }}{{ loop.revindex }}{{ item }}
+{%- endfor %}';
+        $pattern = '1on\\e\'s 2on\\e\'s 2one"s 1one"s ';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -564,11 +373,47 @@ class tpl_xxx extends tpl_yyy';
         );
     }
 
+    function test_test16()
+    {
+        $data = array('data' => array());
+        $s = ' {% macro input(name, value=\'\', type=\'text\', size=20) -%}
+    <input type="{{ type }}" name="{{ name }}" value="{{
+        value|e }}" size="{{ size }}">
+{%- endmacro -%}
+<p>{{ input(\'username\') }}</p>
+<p>{{ input(\'password\', type=\'password\') }}</p>';
+        $pattern = '<p><input type="text" name="username" value="" size="20"></p>
+<p><input type="password" name="password" value="" size="20"></p>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
     function test_test17()
     {
         $data = array('data' => '<<<>>>');
         $s = ' <p>{{data|e|default(\'nothing\')}}</p>';
         $pattern = ' <p>&lt;&lt;&lt;&gt;&gt;&gt;</p>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    function test_test18()
+    {
+        $data = array('data' => '<<<>>>');
+        $s = ' <table>
+	{% for x in [1,2] %}
+	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
+	one</td><td>two</td></tr>
+	{% endfor %}
+	</table>';
+        $pattern = ' <table>
+	<tr class="odd"><td>1</td><td>
+	one</td><td>two</td></tr>
+	<tr class="even"><td>2</td><td>
+	one</td><td>two</td></tr>
+	</table>';
         $this->assertEquals(
             $this->_test_cmpl($s, $data), $pattern
         );
@@ -814,6 +659,161 @@ class tpl_xxx extends tpl_yyy';
         );
     }
 
+    function test_test25()
+    {
+        $data = array(
+            'topics' => array(
+                'topic1' => array('Message 1 of topic 1', 'Message 2 of topic 1'),
+                'topic2' => array('Message 1 of topic 2', 'Message 2 of topic 2'),
+            ));
+        $s = '{% for topic, messages in topics %}
+       * {{ loop.index }}: {{ topic }}
+     {% for message in messages %}
+         - {{ loop.parent.loop.index }}.{{ loop.index }}: {{ message }}
+     {% endfor %}
+   {% endfor %}';
+        $pattern = '
+       * 1: topic1
+         - 1.1: Message 1 of topic 1
+         - 1.2: Message 2 of topic 1
+       * 2: topic2
+         - 2.1: Message 1 of topic 2
+         - 2.2: Message 2 of topic 2';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data), $pattern
+        );
+    }
+
+    /** test extends-parent  */
+    function test_test26()
+    {
+        $data = array('data' => '<<<>>>');
+        $s = '
+{% extends "test.php"%}
+{% block test %} <table>
+	{% for x in [1,2] %}
+	<tr class="{{loop.cycle(\'odd\',\'even\')}}"><td>{{x}}</td><td>
+	one</td><td>two</td></tr>
+	{% endfor %}
+	</table> {{parent()}}{% endblock %}
+	{{test()}} ';
+        $pattern = ' <table>
+	<tr class="odd"><td>1</td><td>
+	one</td><td>two</td></tr>
+	<tr class="even"><td>2</td><td>
+	one</td><td>two</td></tr>
+	</table> Calling parent test! Ok! ';
+        $this->assertEquals(
+            $this->_test_cmpl($s, $data,false,'_test'), $pattern
+        );
+    }
+
+    /** test extends-parent  */
+    function test_test27()
+    {
+        $s = '##
+##   Генерация страничной адресации
+##
+{% macro paging(pages)%}
+{% if pages -%}
+<div class="paging">
+        {%- set maxnumb= (pages.total) // pages.perpage
+           set start = pages.page-3
+           if start>0 -%}
+            <a href="{{pages.url}}page=prev">&lt;&lt;</a>&nbsp;
+        {%- endif -%}
+
+        {%- for xpage in range(7,1) -%} {% set page=start+xpage -%}
+        {% if page>0 and page <= maxnumb -%}
+        {% if page == pages.page -%}
+        <span>{{page}}</span>&nbsp;
+        {%- else -%}
+        <a href="{{pages.url}}page={{page}}">{{page}}</a>&nbsp;
+        {%-  endif endif  endfor -%}
+        {%- if page < maxnumb -%}
+            <a href="{{pages.url}}?page=next">&gt;&gt;</a>&nbsp;
+        {%- endif -%}
+        {%- if pages.total%}<span>Всего: {{pages.total}}</span>{% endif -%}
+        </div>
+{% endif -%}
+{% endmacro -%}';
+        $pattern = '<div class="paging"><a href="http:xxx.com/xxx?page=prev">&lt;&lt;</a>&nbsp;<a href="http:xxx.com/xxx?page=2">2</a>&nbsp;<a href="http:xxx.com/xxx?page=3">3</a>&nbsp;<a href="http:xxx.com/xxx?page=4">4</a>&nbsp;<span>5</span>&nbsp;<a href="http:xxx.com/xxx?page=6">6</a>&nbsp;<a href="http:xxx.com/xxx?page=7">7</a>&nbsp;<a href="http:xxx.com/xxx?page=8">8</a>&nbsp;<a href="http:xxx.com/xxx??page=next">&gt;&gt;</a>&nbsp;<span>Всего: 144</span></div>';
+        $this->assertEquals(
+            $this->_test_cmpl($s, array('pages'=>array(
+                'total'=>144,
+                'perpage'=>15,
+                'url'=>"http:xxx.com/xxx?",
+                'page'=>5,
+            )),false,'_paging'), $pattern
+        );
+    }
+
+    function test_test28(){
+        $s="class tpl_{{5+min(5,4,3)}}";
+        $pattern = 'class tpl_8';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'6'],false)
+        );
+    }
+
+    function test_test29(){
+        $s="tpl_{{`extends` |default('base') }}";
+        $pattern = 'tpl_yyy';
+        $this->assertEquals(
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false), $pattern
+        );
+    }
+
+    function test_test30(){
+        $s="class tpl_{{ext+min(5,4,3)}}";
+        $pattern = 'class tpl_9';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'ext'=>'6'],false)
+        );
+    }
+
+    function test31(){
+        $s='####################################################################
+##
+##  файл шаблонов для шаблонизатора
+##
+####################################################################
+
+####################################################################
+## class
+##
+{%- block class -%}
+<?php
+/**
+ * this file is created automatically at "{{ now(\'d M Y G:i\') }}". Never change anything,
+ * for your changes can be lost at any time.
+ */
+{# ## don\'t need includes any more
+{% if extends %}
+include_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{extends}}.php\';
+{% else %}
+include_once \'tpl_base.php\';
+{% endif %}
+
+{% for imp in import -%}
+require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{imp}}.php\';
+{% endfor %}
+#}
+class tpl_{{name}} extends tpl_{{`extends` |default(\'base\') }}
+{%endblock%}';
+        $pattern = '
+<?php
+/**
+ * this file is created automatically at "'.date('d M Y G:i').'". Never change anything,
+ * for your changes can be lost at any time.
+ */
+
+class tpl_xxx extends tpl_yyy';
+        $this->assertEquals( $pattern,
+            $this->_test_cmpl($s, ['name'=>'xxx', 'extends'=>'yyy'],false)
+        );
+    }
+
     function testSelf_Self()
     {
         $data = array('form' => array(
@@ -899,9 +899,19 @@ class tpl_xxx extends tpl_yyy';
             'TEMPLATE_PATH' => __DIR__.'/templates',
             'templates_dir' => __DIR__.'/templates',
             'PHP_PATH' => __DIR__.'/templates',
-            'TEMPLATE_EXTENSION' => 'twig'
+            'TEMPLATE_EXTENSION' => 'twig',
+            'FORCE'=>true,
+            'namespace' =>'Ksnk\template\admin',
+            'basenamespace' =>'Ksnk\templates',
         ));
-
+        include_once(__DIR__.'/templates/fields.php') ;// align_sign
+        $tpl=new Ksnk\template\admin\fields();
+        $this->assertEquals(
+            '
+    <span class="states glyphicon " data-handle="xstate" data-states=\'[{"val":0,"class":"glyphicon-align-left"},{"val":1,"class":"glyphicon-align-right"},{"val":2,"class":"glyphicon-align-center"},{"val":3,"class":"glyphicon-align-justify"}]\' data-val="0" aria-hidden="true"></span>
+',
+            $tpl->_align_sign([],[])
+        );
     }
     /**
      * --- поставить = вместо ==
