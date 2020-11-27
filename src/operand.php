@@ -2,14 +2,14 @@
 /**
  * Jinja language parcer
  * <%=point('hat','jscomment');
-
-
-
-
-%>
+ *
+ *
+ *
+ *
+ * %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
 
 
 /**
@@ -41,7 +41,7 @@ class operand
 
     function __get($name)
     {
-        $this->$name='';
+        $this->$name = '';
         return '';
     }
 

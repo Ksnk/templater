@@ -2,14 +2,14 @@
 /**
  * helper class to check template modification time
  * <%=point('hat','jscomment');
-// эти пустые строки оставлены для того, чтобы номера строк совпадали
-
-
-
-%>
+ * // эти пустые строки оставлены для того, чтобы номера строк совпадали
+ *
+ *
+ *
+ * %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
 
 use \Ksnk\templater\php_compiler;
 
@@ -21,10 +21,10 @@ class template_compiler
     static private $opt = array(
         'templates_dir' => 'templates/',
         'TEMPLATE_EXTENSION' => 'jtpl',
-        'namespace'=>'Ksnk\templates'
+        'namespace' => 'Ksnk\templates'
     );
 
-    static public function options($options = '', $val = null,$default='')
+    static public function options($options = '', $val = null, $default = '')
     {
         if (is_array($options))
             self::$opt = array_merge(self::$opt, $options);
@@ -54,12 +54,12 @@ class template_compiler
         $result = '';
         try {
             $calc->makelex($tpl);
-            $ns=self::options('namespace');
-            if(!empty($ns))
-                $calc->namespace=$ns;
-            $bns=self::options('basenamespace');
-            if(!empty($bns))
-                $calc->basenamespace=$bns;
+            $ns = self::options('namespace');
+            if (!empty($ns))
+                $calc->namespace = $ns;
+            $bns = self::options('basenamespace');
+            if (!empty($bns))
+                $calc->basenamespace = $bns;
             $result = $calc->tplcalc($name, $tpl_class);
         } catch (CompilationException $e) {
             echo $e->getMessage();
@@ -85,37 +85,50 @@ class template_compiler
 
         $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
 
-        //$time = microtime(true);
-        $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
-        //print_r('xxx'.$templates);echo " !";
         $xtime = filemtime(__FILE__);
+        $base = realpath(self::options('TEMPLATE_PATH'));
+        $basens = self::options('namespace');
 
-        if (!empty($templates)) {
-            foreach ($templates as $v) {
-                $name = str_replace('.','_',basename($v, "." . $ext));
-                $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . $name . '.php';
-                $force=self::options('FORCE');
-                $NLBR=php_sapi_name() == "cli"?"\n":"<br>\n";
-                if (
-                    !empty($force)
-                    || !file_exists($phpn)
-                    || (max($xtime, filemtime($v)) > filemtime($phpn))
-                ) {
-                    php_compiler::$filename = $v;
-                    $x = self::compile_tpl(file_get_contents($v), $name);
-                    if (!!$x) {
-                        if(false===($size=file_put_contents($phpn, $x))){
-                            if($force) echo $NLBR."error writing file " .$phpn;
-                        } else {
-                            if($force) printf($NLBR."success writing file %s(%s)",$phpn,$size);
-                        };
-                    } else if($force) {
-                        echo $NLBR."fail with " .$phpn;
-                    }
-                } else {
-                    if($force) {
-                        echo $NLBR."skipped with " .$phpn;
-                    }
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base), \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($iterator as $path) if ($path->isFile() && preg_match('/' . preg_quote('.' . $ext, '/') . '$/', $path->getPathname())) {
+            //foreach ($templates as $v) {
+            $v = $path->getPathname();
+            $p = array_diff(preg_split('~[/\\\]~', str_replace($base, '', $v)), ['']);
+            array_pop($p);
+
+            $ns = $basens;
+            $name = str_replace('.', '_', basename($v, "." . $ext));
+            $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR;
+            if (!empty($p)) {
+                $ns .= '\\' . implode('\\', $p);
+                $phpn .= implode(DIRECTORY_SEPARATOR, $p) . DIRECTORY_SEPARATOR;
+            }
+            $phpn .= $name . '.php';
+            self::options('namespace', $ns);
+            $force = self::options('FORCE');
+            $NLBR = php_sapi_name() == "cli" ? "\n" : "<br>\n";
+            if (
+                !empty($force)
+                || !file_exists($phpn)
+                || (max($xtime, filemtime($v)) > filemtime($phpn))
+            ) {
+                php_compiler::$filename = $v;
+                $x = self::compile_tpl(file_get_contents($v), $name);
+                if (!!$x) {
+                    if (false === ($size = file_put_contents($phpn, $x))) {
+                        if ($force) echo $NLBR . "error writing file " . $phpn;
+                    } else {
+                        if ($force) printf($NLBR . "success writing file %s(%s)", $phpn, $size);
+                    };
+                } else if ($force) {
+                    echo $NLBR . "fail with " . $phpn;
+                }
+            } else {
+                if ($force) {
+                    echo $NLBR . "skipped with " . $phpn;
                 }
             }
         }

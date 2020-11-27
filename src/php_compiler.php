@@ -2,20 +2,21 @@
 /**
  * PHP templates creator.
  * <%=point('hat','jscomment');
-
-
-
-
-%>
+ *
+ *
+ *
+ *
+ * %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
+
 use Ksnk\templates\base as tpl_base;
 
 class php_compiler extends tpl_parser
 {
 
-    static $filename='';
+    static $filename = '';
 
     function __construct($options = array())
     {
@@ -38,16 +39,16 @@ class php_compiler extends tpl_parser
             ->newOp1('not', '!(%s)', 'BB')
             ->newOp2('&', 3, '$this->_int(%s)& $this->_int(%s)', '*DD')
             ->newOp2('<< >>', 3)
-        // однопараметровые фильтры
-        // ну очень служебные функции
+            // однопараметровые фильтры
+            // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
-        //->newOpR('loop', array($this, 'operand_loop'))
+            //->newOpR('loop', array($this, 'operand_loop'))
             ->newOpR('self', 'self', self::TYPE_XID)
             ->newOpR('_self', 'self', self::TYPE_XID)
             ->newOpR('true', 'true', self::TYPE_XBOOLEAN)
             ->newOpR('false', 'false', self::TYPE_XBOOLEAN)
             ->newOp1('now', 'date(%s)')
-        // фильтры и тесты
+            // фильтры и тесты
             ->newFunc('e', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('raw', '%s', 'SS')
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
@@ -65,7 +66,7 @@ class php_compiler extends tpl_parser
             ->newFunc('explode', 'explode(%s)')
             ->newFunc('price', 'number_format(%s,0,"."," ")')
             ->newFunc('default', '$this->filter_default(%s)')
-            ->newFunc('var_export', array($this,'function_var_export'))
+            ->newFunc('var_export', array($this, 'function_var_export'))
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
             ->newFunc('slice', '$this->func_slice(%s)')
             ->newFunc('range', '$this->func_range(%s)')
@@ -78,7 +79,7 @@ class php_compiler extends tpl_parser
             ->newFunc('format', 'sprintf(%s)')
             ->newFunc('setarray', '$this->func_setarray(%s)')
             ->newFunc('link', '$this->func_enginelink(%s)')
-            ->newFunc('fileurl','$this->func_fileurl(%s)')
+            ->newFunc('fileurl', '$this->func_fileurl(%s)')
             ->newFunc('truncate', '$this->func_truncate(%s)')
             ->newFunc('tourl', '$this->func_2url(%s)')
             ->newFunc('date', '$this->func_date(%s)')
@@ -89,7 +90,7 @@ class php_compiler extends tpl_parser
             ->newFunc('in_array', '$this->func_in_array(%s)')
             ->newFunc('in_array', '$this->func_in_array(%s)')
             ->newFunc('is_array', '$this->func_is_array(%s)')
-           // ->newFunc('parent', 'parent::_styles(%s)')
+            // ->newFunc('parent', 'parent::_styles(%s)')
             ->newFunc('parent', array($this, 'function_parent'))
             ->newFunc('debug', '\ENGINE::debug(%s)')
             ->newOp1('_echo_', array($this, '_echo_'))
@@ -191,23 +192,22 @@ class php_compiler extends tpl_parser
                             $this->_store_external($res->val);
                             $res->val = '$par[\'' . $res->val . '\']';
                             $res->type = self::TYPE_XID;
-                        }
-                        ;
+                        };
                     } elseif ($res->type == self::TYPE_SLICE) {
-                        if(!empty($res->list)){
-                            $this->to('I',$res->list[0]);
-                            $res->val =$res->list[0]->val;
-                            $condition=sprintf('$this->func_bk(%s',$res->list[0]->val);
+                        if (!empty($res->list)) {
+                            $this->to('I', $res->list[0]);
+                            $res->val = $res->list[0]->val;
+                            $condition = sprintf('$this->func_bk(%s', $res->list[0]->val);
 
                             array_shift($res->list);
-                            foreach($res->list as  $el){
-                                if($el->type==self::TYPE_ID){
-                                    $el->type=self::TYPE_STRING ;// вырезка через точку - это вырезка через индекс
+                            foreach ($res->list as $el) {
+                                if ($el->type == self::TYPE_ID) {
+                                    $el->type = self::TYPE_STRING;// вырезка через точку - это вырезка через индекс
                                 }
-                                $this->to('S',$el);
-                                $condition.=sprintf(',%s',$el->val);
+                                $this->to('S', $el);
+                                $condition .= sprintf(',%s', $el->val);
                             }
-                            $res->val=$condition.')';
+                            $res->val = $condition . ')';
                             unset($res->list);
                         }
                         $res->type = self::TYPE_XSTRING;
@@ -215,8 +215,7 @@ class php_compiler extends tpl_parser
                         $this->to(self::TYPE_XLIST, $res);
                     } /*elseif ($res->type!=self::TYPE_XID){
 	    		$this->error('waiting for ID')	;
-	    	}*/
-                    ;
+	    	}*/;
                     break;
                 case self::TYPE_XLIST:
                     $this->to('L', $res);
@@ -259,7 +258,7 @@ class php_compiler extends tpl_parser
                 case 'D':
                 case self::TYPE_OPERAND:
                 case self::TYPE_STRING:
-                    if ($res->type == self::TYPE_ID|| $res->type == self::TYPE_STRING2) $this->to('I', $res);
+                    if ($res->type == self::TYPE_ID || $res->type == self::TYPE_STRING2) $this->to('I', $res);
                     if ($res->type == self::TYPE_OBJECT) {
                         $res->val = call_user_func($res->handler, $res, '', 'value');
                         $res->type = self::TYPE_OPERAND;
@@ -321,26 +320,28 @@ class php_compiler extends tpl_parser
      * @return operand
      * @throws CompilationException
      */
-    function function_var_export($op1,$op2){
+    function function_var_export($op1, $op2)
+    {
         //{# '.preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export($par['extern'],true)).';#}
-        $value=array();
-       // foreach($op2->value['keys'] as &$v){
-            $value=$this->to('S', $op2)->val ;
-      //  }
+        $value = array();
+        // foreach($op2->value['keys'] as &$v){
+        $value = $this->to('S', $op2)->val;
+        //  }
         //array_unshift($value,'$par');
-        $op1->val = "preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export(".$value.',true))' ;
+        $op1->val = "preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export(" . $value . ',true))';
         $op1->type = "TYPE_OPERAND";
         return $op1;
     }
 
-    function _store_external($ext_key,$ext_value=[]){
+    function _store_external($ext_key, $ext_value = [])
+    {
         // найдем opensentence уровня класс или макра
         // $block=& $this->opensent('block');
-        $o=& $this->opensent('class');
-        if(!isset($o['extern']))
-            $o['extern']=[];
-        if(!isset($o['extern'][$ext_key]) || !empty($ext_value))
-            $o['extern'][$ext_key]=$ext_value;
+        $o =& $this->opensent('class');
+        if (!isset($o['extern']))
+            $o['extern'] = [];
+        if (!isset($o['extern'][$ext_key]) || !empty($ext_value))
+            $o['extern'][$ext_key] = $ext_value;
     }
 
     /**
@@ -349,10 +350,11 @@ class php_compiler extends tpl_parser
      * @param $op2
      * @return mixed
      */
-    function _external_($op1,$op2=[]){
-        $ext_key=null;
-        $ext_value=[];
-        if(!empty($op2) && $op2->type==self::TYPE_LIST) {
+    function _external_($op1, $op2 = [])
+    {
+        $ext_key = null;
+        $ext_value = [];
+        if (!empty($op2) && $op2->type == self::TYPE_LIST) {
             foreach ($op2->value['keys'] as $v) {
                 if (is_null($ext_key)) {
                     $ext_key = $v->orig ?: $v->val;
@@ -361,11 +363,11 @@ class php_compiler extends tpl_parser
                 }
             }
         } else {
-            $ext_key=$op1->orig;
-            $ext_value=[];
+            $ext_key = $op1->orig;
+            $ext_value = [];
         }
         // найдем opensentence уровня класс или макра
-        $this->_store_external($ext_key,$ext_value);
+        $this->_store_external($ext_key, $ext_value);
         return false;
     }
 
@@ -376,15 +378,15 @@ class php_compiler extends tpl_parser
      * @return operand
      * @throws CompilationException
      */
-    function function_parent($op1,$op2)
+    function function_parent($op1, $op2)
     {
-        $value=array();
-        foreach($op2->value['keys'] as &$v){
-            $value[]=$this->to('S', $v)->val ;
+        $value = array();
+        foreach ($op2->value['keys'] as &$v) {
+            $value[] = $this->to('S', $v)->val;
         }
-        array_unshift($value,'$par');
+        array_unshift($value, '$par');
 
-        $op1->val = 'parent::_'.$this->currentFunction.'('.implode(',',$value).')' ;
+        $op1->val = 'parent::_' . $this->currentFunction . '(' . implode(',', $value) . ')';
         $op1->type = "TYPE_OPERAND";
         return $op1;
     }

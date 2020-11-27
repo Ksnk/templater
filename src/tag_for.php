@@ -2,19 +2,18 @@
 /**
  * Jinja language parcer
  * <%=point('hat','jscomment');
-
-
-
-
-%>
+ *
+ *
+ *
+ *
+ * %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
 
 /**
  * класс - for
  */
-
 class tag_for
 {
 
@@ -101,7 +100,7 @@ class tag_for
      * @param tpl_parser $parcer
      * @throws CompilationException
      */
-    function execute($parcer, $pos=0)
+    function execute($parcer, $pos = 0)
     {
         // парсинг тега for
         // полная форма:
