@@ -4,14 +4,6 @@ namespace {
 
     use Ksnk\templater\template_compiler;
     use PHPUnit\Framework\TestCase;
-    use Ksnk\templates\base as tpl_base;
-
-// include_once 'header.inc.php';
-
-    function pps(&$x, $default = '')
-    {
-        if (empty($x)) return $default; else return $x;
-    }
 
     class engine
     {
@@ -943,11 +935,6 @@ class tpl_xxx extends tpl_yyy
 namespace Ksnk\templates {
     class test extends base
     {
-
-        function __construct()
-        {
-
-        }
 
         function _($par = 0)
         {
