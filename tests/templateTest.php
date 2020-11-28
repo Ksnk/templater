@@ -1,4 +1,5 @@
 <?php
+
 namespace {
     include_once '../vendor/autoload.php';
 
@@ -80,8 +81,7 @@ namespace {
             $data = array('main' => $GLOBALS['engine'], 'data' => '<<<>>>');
             $s = '
         {{ main.test (1,2,3) }} ';
-            $pattern = '
-        1+2+3 ';
+            $pattern = '        1+2+3 ';
             $this->assertEquals($pattern,
                 $this->_test_cmpl($s, $data)
             );
@@ -229,8 +229,8 @@ namespace {
     {{ item }}
 {%- endfor %}';
             $pattern = '123456789';
-            $this->assertEquals(
-                $this->_test_cmpl($s, $data), $pattern
+            $this->assertEquals($pattern,
+                $this->_test_cmpl($s, $data)
             );
         }
 
@@ -246,8 +246,7 @@ namespace {
     {{ item }}
 {%- endfor %}';
             $pattern = '
-
-        123456789';
+123456789';
             $this->assertEquals($pattern,
                 $this->_test_cmpl($s, $data)
             );
@@ -281,10 +280,9 @@ namespace {
     {{ item }}
 {%- endfor %}';
             $pattern = '
-
-        123456789';
-            $this->assertEquals(
-                $this->_test_cmpl($s, $data), $pattern
+123456789';
+            $this->assertEquals($pattern,
+                $this->_test_cmpl($s, $data)
             );
         }
 
@@ -370,7 +368,7 @@ namespace {
 {%- endmacro -%}
 <p>{{ input(\'username\') }}</p>
 <p>{{ input(\'password\', type=\'password\') }}</p>';
-            $pattern = ' <p><input type="text" name="username" value="" size="20"></p>
+            $pattern = '<p><input type="text" name="username" value="" size="20"></p>
 <p><input type="password" name="password" value="" size="20"></p>';
             $this->assertEquals(
                 $this->_test_cmpl($s, $data), $pattern
@@ -493,7 +491,7 @@ namespace {
 </tr>
 {% endif %}
 {% endfor %}';
-            $pattern = '  <tr>
+            $pattern = '<tr>
 <td style="height:35px;"></td>
 <th class="bglgreen" style="border-left:none;">1</th>
 <td class="bglgreen">
@@ -517,7 +515,7 @@ namespace {
 <input type="button" class="remrec">
 </td>
 </tr>
- <tr>
+<tr>
 <td style="height:35px;"></td>
 <th class="bggreen" style="border-left:none;">2</th>
 <td class="bggreen">
@@ -541,7 +539,7 @@ namespace {
 <input type="button" class="remrec">
 </td>
 </tr>
- <tr>
+<tr>
 <td style="height:35px;"></td>
 <th class="bglgreen" style="border-left:none;border-bottom:none;">3</th>
 <td class="bglgreen" style="border-bottom:none;">
@@ -660,13 +658,15 @@ namespace {
          - {{ loop.parent.loop.index }}.{{ loop.index }}: {{ message }}
      {% endfor %}
    {% endfor %}';
-            $pattern = '       * 1: topic1
-              - 1.1: Message 1 of topic 1
-              - 1.2: Message 2 of topic 1
-               * 2: topic2
-              - 2.1: Message 1 of topic 2
-              - 2.2: Message 2 of topic 2
-        ';
+            $pattern = <<<xxx
+       * 1: topic1
+         - 1.1: Message 1 of topic 1
+         - 1.2: Message 2 of topic 1
+       * 2: topic2
+         - 2.1: Message 1 of topic 2
+         - 2.2: Message 2 of topic 2
+
+xxx;
             $this->assertEquals($pattern,
                 $this->_test_cmpl($s, $data)
             );
@@ -794,8 +794,7 @@ require_once TEMPLATE_PATH.DIRECTORY_SEPARATOR.\'tpl_{{imp}}.php\';
 #}
 class tpl_{{name}} extends tpl_{{`extends` |default(\'base\') }}
 {%endblock%}'; // '.date('d M Y G:i').'
-            $pattern = '
-<?php
+            $pattern = '<?php
 /**
  * this file is created automatically at "' . date('d M Y G:i') . '". Never change anything,
  * for your changes can be lost at any time.
@@ -819,7 +818,7 @@ class tpl_xxx extends tpl_yyy
                 )));
             $s = file_get_contents(dirname(__FILE__) . '/quick.form.twig');
 
-            $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial, sans-serif; font-size: small; } .quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element "> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element "> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element "> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element "> </div> </div> </form> </div> </body> </html>';
+            $pattern = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <title>Using Twig template engine to output the form</title> <style type="text/css"> /* Set up custom font and form width */ body { margin-left: 10px; font-family: Arial, sans-serif; font-size: small; } .quickform { min-width: 500px; max-width: 600px; width: 560px; } </style> </head> <body> <div class="quickform"> <form> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> <div class="row"> <label for="" class="element"> </label> <div class="element"> </div> </div> </form> </div> </body> </html>';
             $this->assertEquals($pattern,
                 $this->compress($this->_test_cmpl($s, $data))
             );
@@ -831,10 +830,12 @@ class tpl_xxx extends tpl_yyy
             $s = '{% macro fileman(list=1,pages=1,type,filter) -%}
 {{list~pages~type~filter}}
         {%- endmacro -%}
-        {{ call (func,1,2,3) }} {{fileman()}} {{fileman(pages=3)}} {{fileman(1,2,3)}}';
-            $pattern = '1230 1100 1300 1230';
-            $this->assertEquals(
-                $this->_test_cmpl($s, $data), $pattern
+        {{ call (func,1,2,3) }} {{fileman()}} {{fileman(pages=3)}} {{fileman(1,2,3)}}
+        ';
+            $pattern = '1230 1100 1300 1230
+        ';
+            $this->assertEquals($pattern,
+                $this->_test_cmpl($s, $data)
             );
         }
 
@@ -843,8 +844,8 @@ class tpl_xxx extends tpl_yyy
             $data = array('namespace' => 'xxx', 'name' => 'yyy');
             $s = "class {% if not namespace %}tpl_{% endif %}{{name}} extends {";
             $pattern = 'class yyy extends {';
-            $this->assertEquals(
-                $this->_test_cmpl($s, $data), $pattern
+            $this->assertEquals($pattern,
+                $this->_test_cmpl($s, $data)
             );
         }
 
@@ -934,6 +935,7 @@ class tpl_xxx extends tpl_yyy
         */
     }
 }
+
 namespace Ksnk\templates {
     class test extends \Ksnk\templater\base
     {
