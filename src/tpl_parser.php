@@ -436,13 +436,13 @@ class tpl_parser
         // предварительное сканирование - режем исходник на началы тегов, до конца тегов
         $types = array();
         /**
-         *
+         * на прошлом закрывающем теге был -
          */
         $triml=false;
         /**
-         * Если на строке только операторы и пробельные символы - такая строка должна пропасть.
+         * массив индексов всех лексем, с начала bstart и до следующего.
          */
-        $trimnl=false;
+        $marklex = [-1];
 
         // забираем лексемную регулярку
         $reg = $this->get_reg($types);
@@ -456,42 +456,34 @@ class tpl_parser
             'start_1' => ':start_0:|:bstart:',
             'trim' => preg_quote('-'),
         ], '~:start_1::trim:?~sm',
-            function ($line) use ($reg, $types,&$triml,&$trimnl) {
+            function ($line) use ($reg, $types, &$marklex, &$triml) {
                // print_r($line);
-                $pasttrimln=$trimnl;
-                if(!empty($line['trim'])) {
-                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
-                    $line['trim']=false;
+                if (!empty($marklex) && preg_match('/\r?\n/s', $line['_skiped'])) {
+                    // удаляем символ перевода строки из текущего скипа
+                    $line['_skiped'] = preg_replace('/^[ \t]*\r?\n/', '', $line['_skiped']);
+                    // удаляем все пробелы в лексемах
+                    foreach ($marklex as $lid) {
+                        if (isset($this->lex[$lid])) {
+                            $this->lex[$lid]->val = preg_replace('/[ \t]*$/', '', $this->lex[$lid]->val);
                 }
-                if($trimnl) {
-                    // предыдущий оператор имел только пробелы перед символом начала строки
-                    // проверяем, что в строке есть только пробелы до перевода строки
-                    if(preg_match('/^\s*(\r?\n)/m',$line['_skiped'])){
-                        // удаляем пробелы в предыдущей лексеме и символы перевода строки в этой
-                        $line['_skiped']=preg_replace('/^\s*?(\r?\n)/','',$line['_skiped']);
                     }
-                    //$line['_skiped'] = preg_replace('/^\s*?(\r?\n)([ \t]*\S)/', '\2',$line['_skiped']);
-                    $trimnl=false;
+                    $marklex = [];
                 }
                 if($triml && !empty($line['_skiped'])) {
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
                     if($line['_skiped']!='') $triml=false;
                 }
+                if (!empty($line['trim'])) {
+                    $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
+                    $line['trim'] = false;
+                }
 
-                if(!empty($line['bstart'])){
-                    $line['_skiped'] = //preg_replace('/^\s*$/', '',
-                        preg_replace('/(\S)\s*?(\r?\n)\s*?$/', '\1\2',$line['_skiped']);
-                    if(preg_match('/$/m',$line['_skiped']))
-                        $trimnl=true;
-                    else
-                        $trimnl=$pasttrimln;
-                }
-                if(!empty($line['xstart'])){
-                    $trimnl=($line['_skiped'][strlen($line['_skiped'])-1]=="\n");
-                }
                 if(!empty($line['_skiped'])) {
                     $pos=$this->scaner->getpos();
                     $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
+                    if (!empty($line['bstart'])) {
+                        $marklex[] = count($this->lex);
+                    }
                     $this->lex[] = $this->oper($line['_skiped'], self::TYPE_STRING, $pos);
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
                     $line['_skiped']='';
@@ -504,14 +496,15 @@ class tpl_parser
                     return;
                 }
 
-                /*if(!empty($line['trim'])) {
-                    $this->lex[] = $this->oper('_trimr_', self::TYPE_OPERATION, $this->scaner->getpos());
-                    $line['trim']=false;
-                }*/
+                $triml = false;
 
 // отрезаем следующую лексему шаблонизатора
                 if(!empty($line['xstart']) || !empty($line['bstart'])) {
-                    $triml=false;
+                    if (!empty($line['bstart'])) {
+                        $marklex[] = -1;
+                    } else {
+                        $marklex = [];
+                    }
                     $first = true;
                     while ($m = $this->scaner->regit($reg)) {
                         $pos = $this->scaner->filestart+$m[0][1];
@@ -564,6 +557,13 @@ class tpl_parser
                 }
             }
         );
+        if (!empty($marklex)) {
+            foreach ($marklex as $lid) {
+                if (isset($this->lex[$lid])) {
+                    $this->lex[$lid]->val = preg_replace('/[ \t]*$/', '', $this->lex[$lid]->val);
+                }
+            }
+        }
 
         $this->lex[] = $this->oper("\x1b", self::TYPE_EOF, $this->scaner->getpos());
     }
@@ -1320,8 +1320,7 @@ class tpl_parser
                             $op->handler = array($this, 'function_iif');
                             $this->execute($op);
                             continue 2;
-                        }
-                        ;
+                        };
                     default:
                         $this->back();
                         break 2;
@@ -1384,7 +1383,6 @@ class tpl_parser
                     $this->error(' range operator not allowed with key:value pair');
                 $keys[] = $this->popOp();
                 $arr[] = $this->popOp();
-                ;
             } else if ($opdepth < count($this->operand)) {
                 while ($opdepth < count($this->operand)) {
                     $keys[] = $this->popOp();
@@ -1538,8 +1536,7 @@ class tpl_parser
                 break;
             }
         }
-        ;
-        if ($op->val != ')') {
+         if ($op->val != ')') {
             $op->prio = $prio;
             $op->unop = $unop;
             array_push($this->operation, $op);
@@ -1551,5 +1548,3 @@ class tpl_parser
 
 
 }
-
-

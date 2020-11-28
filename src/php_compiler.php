@@ -192,8 +192,7 @@ class php_compiler extends tpl_parser
                             $res->val = '$par[\'' . $res->val . '\']';
                             $res->type = self::TYPE_XID;
                         }
-                        ;
-                    } elseif ($res->type == self::TYPE_SLICE) {
+                   } elseif ($res->type == self::TYPE_SLICE) {
                         if(!empty($res->list)){
                             $this->to('I',$res->list[0]);
                             $res->val =$res->list[0]->val;

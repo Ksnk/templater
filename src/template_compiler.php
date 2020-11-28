@@ -11,8 +11,6 @@
 
 namespace Ksnk\templater ;
 
-use \Ksnk\templater\php_compiler;
-
 class template_compiler
 {
 
@@ -138,4 +136,3 @@ class template_compiler
         }
 
 }
-
