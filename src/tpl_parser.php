@@ -12,7 +12,7 @@
 namespace Ksnk\templater ;
 
 use Ksnk\scaner\scaner;
-use Ksnk\templates\base as tpl_base;
+use Ksnk\templater\base as tpl_base;
 
 class tpl_parser
 {
@@ -870,9 +870,9 @@ class tpl_parser
         static $tpl_compiler;
         if (!empty($tpl_class) || empty($tpl_compiler)) {
             if($this->basenamespace)
-                $tpl_compiler = '\\' .$this->basenamespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
+                $tpl_compiler = '\\' .$this->basenamespace. '\\'.base::pps($tpl_class, 'compiler');
             elseif($this->namespace)
-                $tpl_compiler = '\\' .$this->namespace. '\\'.\Ksnk\templates\base::pps($tpl_class, 'compiler');
+                $tpl_compiler = '\\' .$this->namespace. '\\'.base::pps($tpl_class, 'compiler');
             else
                 $tpl_compiler = 'tpl_' . tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {

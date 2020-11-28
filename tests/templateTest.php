@@ -4,6 +4,7 @@ namespace {
 
     use Ksnk\templater\template_compiler;
     use PHPUnit\Framework\TestCase;
+    use \Ksnk\templater\CompilationException;
 
     class engine
     {
@@ -37,6 +38,7 @@ namespace {
             static $classnumber = 10;
             $calc = new \Ksnk\templater\php_compiler();
             $calc->namespace = 'Ksnk\templates';
+            $calc->basenamespace = 'Ksnk\templater';
 
             while (class_exists($calc->namespace . '\test' . $classnumber, false))
                 $classnumber++;
@@ -857,7 +859,7 @@ class tpl_xxx extends tpl_yyy
 <th>{{ name }}</th>
             {% endif %}{% endfor %}';
             $pattern = '1230 1100 1300 1230';
-            $this->expectException(Ksnk\templater\CompilationException::class);
+            $this->expectException(CompilationException::class);
             $this->_test_cmpl($s, $data);
         }
 
@@ -880,7 +882,7 @@ class tpl_xxx extends tpl_yyy
 </div> ";
             $pattern = '<div class=\'body\'>
 </div> ';
-            $this->expectException(Ksnk\templater\CompilationException::class);
+            $this->expectException(CompilationException::class);
 
             $this->_test_cmpl($s, $data);
 
@@ -894,11 +896,11 @@ class tpl_xxx extends tpl_yyy
                 'PHP_PATH' => __DIR__ . '/templates',
                 'TEMPLATE_EXTENSION' => 'twig',
                 'FORCE' => true,
-                'namespace' => 'Ksnk\template\admin',
-                'basenamespace' => 'Ksnk\templates',
+                'namespace' => 'Ksnk\templates',
+                'basenamespace' => 'Ksnk\templater',
             ));
-            include_once(__DIR__ . '/templates/fields.php');// align_sign
-            $tpl = new Ksnk\template\admin\fields();
+            include_once(__DIR__ . '/templates/admin/fields.php');// align_sign
+            $tpl = new Ksnk\templates\admin\fields();
             $this->assertEquals(
                 '    <span class="states glyphicon " data-handle="xstate" data-states=\'[{"val":0,"class":"glyphicon-align-left"},{"val":1,"class":"glyphicon-align-right"},{"val":2,"class":"glyphicon-align-center"},{"val":3,"class":"glyphicon-align-justify"}]\' data-val="0" aria-hidden="true"></span>
 ',
@@ -933,7 +935,7 @@ class tpl_xxx extends tpl_yyy
     }
 }
 namespace Ksnk\templates {
-    class test extends base
+    class test extends \Ksnk\templater\base
     {
 
         function _($par = 0)

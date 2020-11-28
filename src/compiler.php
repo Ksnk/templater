@@ -3,7 +3,7 @@
  * this file is created automatically at "26 Nov 2020 23:54". Never change anything,
  * for your changes can be lost at any time.
  */
-namespace Ksnk\templates;
+namespace Ksnk\templater;
 
 class compiler extends base {
 public static $extern=['namespace' =>[],

@@ -60,6 +60,8 @@ class template_compiler
             $bns=self::options('basenamespace');
             if(!empty($bns))
                 $calc->basenamespace=$bns;
+            else
+                $calc->basenamespace=__NAMESPACE__;
             $result = $calc->tplcalc($name, $tpl_class);
         } catch (CompilationException $e) {
             echo $e->getMessage();
@@ -85,15 +87,30 @@ class template_compiler
 
         $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
 
-        //$time = microtime(true);
-        $templates = glob(self::options('TEMPLATE_PATH') . DIRECTORY_SEPARATOR . '*.' . $ext);
-        //print_r('xxx'.$templates);echo " !";
         $xtime = filemtime(__FILE__);
+        $base = realpath(self::options('TEMPLATE_PATH'));
+        $basens = self::options('rootnamespace');
+        if(empty($basens)) $basens = self::options('namespace');
 
-        if (!empty($templates)) {
-            foreach ($templates as $v) {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base), \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($iterator as $path) if ($path->isFile() && preg_match('/' . preg_quote('.' . $ext, '/') . '$/', $path->getPathname())) {
+            //foreach ($templates as $v) {
+            $v = $path->getPathname();
+            $p = array_diff(preg_split('~[/\\\]~', str_replace($base, '', $v)), ['']);
+            array_pop($p);
+
+            $ns = $basens;
                 $name = str_replace('.','_',basename($v, "." . $ext));
-                $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR . $name . '.php';
+            $phpn = self::options('PHP_PATH') . DIRECTORY_SEPARATOR;
+            if (!empty($p)) {
+                $ns .= '\\' . implode('\\', $p);
+                $phpn .= implode(DIRECTORY_SEPARATOR, $p) . DIRECTORY_SEPARATOR;
+            }
+            $phpn .= $name . '.php';
+            self::options('namespace', $ns);
                 $force=self::options('FORCE');
                 $NLBR=php_sapi_name() == "cli"?"\n":"<br>\n";
                 if (
@@ -119,7 +136,6 @@ class template_compiler
                 }
             }
         }
-    }
 
 }
 

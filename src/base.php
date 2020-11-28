@@ -7,7 +7,7 @@
  * Фильтры обязаны иметь первым параметром данные для фильтрации
  *
  */
-namespace Ksnk\templates;
+namespace Ksnk\templater;
 
 class base
 {
