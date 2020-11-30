@@ -9,6 +9,9 @@
  */
 namespace Ksnk\templater;
 
+use \ENGINE;
+use \UTILS;
+
 class base
 {
 
@@ -399,7 +402,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * @param null $par1
      * @param null $par2
      * @param null $par3
-     * @return array
+     * @return mixed
      */
     public function callex($plugin = 'MAIN', $method = '_handle', $par1 = null, $par2 = null, $par3 = null)
     {

@@ -27,7 +27,7 @@ parent::__construct();
 $this->macro['{{m}}']=array($this,'_{{m}}');
 {% endfor %}
 {% for imp in import -%}
-${{imp}}=new tpl_{{imp}}();
+${{imp}}=new {{imp}}();
 $this->macro=array_merge($this->macro,${{imp}}->macro);
 {%-endfor%}
 }

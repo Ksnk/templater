@@ -1,6 +1,6 @@
 <?php
 /**
- * this file is created automatically at "30 Nov 2020 11:06". Never change anything,
+ * this file is created automatically at "30 Nov 2020 12:02". Never change anything,
  * for your changes can be lost at any time.
  */
 namespace Ksnk\templater;
@@ -102,7 +102,7 @@ parent::__construct();
             ){
                 $result.='$'
                     .($imp)
-                    .'=new tpl_'
+                    .'=new '
                     .($imp)
                     .'();
 $this->macro=array_merge($this->macro,$'
