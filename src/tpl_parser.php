@@ -2,11 +2,11 @@
 /**
  * Jinja language parcer
  * <%=point('hat','jscomment');
- *
- *
- *
- *
- * %>
+
+
+
+
+%>
  */
 
 namespace Ksnk\templater;
@@ -151,7 +151,8 @@ class tpl_parser
         /**
          * массив опций для изменения на лету
          */
-    , $options = array(// Enviroment setting
+    , $options = array(
+        // Enviroment setting
     );
 
     public

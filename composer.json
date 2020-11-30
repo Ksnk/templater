@@ -1,6 +1,5 @@
 {
 
-  "version": "1.1.0",
   "name": "ksnk/templater",
   "description": "Jinja2 php templater engine",
   "keywords": ["ksnk", "jinja", "templates"],

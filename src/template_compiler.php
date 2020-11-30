@@ -2,14 +2,14 @@
 /**
  * helper class to check template modification time
  * <%=point('hat','jscomment');
- * // эти пустые строки оставлены для того, чтобы номера строк совпадали
- *
- *
- *
- * %>
+// эти пустые строки оставлены для того, чтобы номера строк совпадали
+
+
+
+%>
  */
 
-namespace Ksnk\templater;
+namespace Ksnk\templater ;
 
 use \Ksnk\templater\php_compiler;
 
@@ -20,8 +20,7 @@ class template_compiler
 
     static private $opt = array(
         'templates_dir' => 'templates/',
-        'TEMPLATE_EXTENSION' => 'jtpl',
-        'namespace' => 'Ksnk\templates'
+        'TEMPLATE_EXTENSION' => 'jtpl'
     );
 
     static public function options($options = '', $val = null, $default = '')

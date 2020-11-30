@@ -2,21 +2,19 @@
 /**
  * PHP templates creator.
  * <%=point('hat','jscomment');
- *
- *
- *
- *
- * %>
+
+
+
+
+%>
  */
 
-namespace Ksnk\templater;
-
-use Ksnk\templates\base as tpl_base;
+namespace Ksnk\templater ;
 
 class php_compiler extends tpl_parser
 {
 
-    static $filename = '';
+    static $filename='';
 
     function __construct($options = array())
     {
@@ -39,16 +37,16 @@ class php_compiler extends tpl_parser
             ->newOp1('not', '!(%s)', 'BB')
             ->newOp2('&', 3, '$this->_int(%s)& $this->_int(%s)', '*DD')
             ->newOp2('<< >>', 3)
-            // однопараметровые фильтры
-            // ну очень служебные функции
+        // однопараметровые фильтры
+        // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
-            //->newOpR('loop', array($this, 'operand_loop'))
+        //->newOpR('loop', array($this, 'operand_loop'))
             ->newOpR('self', 'self', self::TYPE_XID)
             ->newOpR('_self', 'self', self::TYPE_XID)
             ->newOpR('true', 'true', self::TYPE_XBOOLEAN)
             ->newOpR('false', 'false', self::TYPE_XBOOLEAN)
             ->newOp1('now', 'date(%s)')
-            // фильтры и тесты
+        // фильтры и тесты
             ->newFunc('e', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('raw', '%s', 'SS')
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
