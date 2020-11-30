@@ -9,12 +9,14 @@
 %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
+
+use Ksnk\templates\base as tpl_base;
 
 class php_compiler extends tpl_parser
 {
 
-    static $filename='';
+    static $filename = '';
 
     function __construct($options = array())
     {
@@ -37,16 +39,16 @@ class php_compiler extends tpl_parser
             ->newOp1('not', '!(%s)', 'BB')
             ->newOp2('&', 3, '$this->_int(%s)& $this->_int(%s)', '*DD')
             ->newOp2('<< >>', 3)
-        // однопараметровые фильтры
-        // ну очень служебные функции
+            // однопараметровые фильтры
+            // ну очень служебные функции
             ->newFunc('defined', 'defined(%s)', 'SB')
-        //->newOpR('loop', array($this, 'operand_loop'))
+            //->newOpR('loop', array($this, 'operand_loop'))
             ->newOpR('self', 'self', self::TYPE_XID)
             ->newOpR('_self', 'self', self::TYPE_XID)
             ->newOpR('true', 'true', self::TYPE_XBOOLEAN)
             ->newOpR('false', 'false', self::TYPE_XBOOLEAN)
             ->newOp1('now', 'date(%s)')
-        // фильтры и тесты
+            // фильтры и тесты
             ->newFunc('e', 'htmlspecialchars(%s)', 'SS')
             ->newFunc('raw', '%s', 'SS')
             ->newFunc('escape', 'htmlspecialchars(%s)', 'SS')
@@ -190,7 +192,7 @@ class php_compiler extends tpl_parser
                             $this->_store_external($res->val);
                             $res->val = '$par[\'' . $res->val . '\']';
                             $res->type = self::TYPE_XID;
-                        };
+                        }
                     } elseif ($res->type == self::TYPE_SLICE) {
                         if (!empty($res->list)) {
                             $this->to('I', $res->list[0]);
@@ -321,7 +323,7 @@ class php_compiler extends tpl_parser
     function function_var_export($op1, $op2)
     {
         //{# '.preg_replace(['/\s*array\s*\(\s*/s','/\s*\)\s*/s'],['[',']'],var_export($par['extern'],true)).';#}
-        $value = array();
+        //$value = array();
         // foreach($op2->value['keys'] as &$v){
         $value = $this->to('S', $op2)->val;
         //  }
