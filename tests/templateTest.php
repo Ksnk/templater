@@ -68,7 +68,7 @@ namespace {
                                   data-addr="table.buykp:222"Array data-confirm=\'{"0":1,"1":2,"2":3,"3":4,"4":5}\'
                                   data-handle="plugin.action:555" title="onetwothree"></span></td>';
             $data=['modelname'=>'table.buykp', 'n'=>555,'but'=>['title'=>'onetwothree','glyph'=>'store', 'confirm'=>[1,2,3,4,5]], 'row'=>['node'=>222]];
-            $this->expectException(\Ksnk\templater\CompilationException::class);
+            $this->expectException(CompilationException::class);
             $this->assertEquals($pattern,
                 $this->_test_cmpl($s, $data)
             );
@@ -912,11 +912,10 @@ class tpl_xxx extends tpl_yyy
          * --- поставить = вместо ==
          * if elem.type='text' - вот сюда поставил
          */
-        /* todo: нипраходит ;(((
-            function testMissedEq()
-            {
-                $data = array('func' => 'fileman', 'data' => '<<<>>>');
-                $s = "<div class='body'>
+        function testMissedEq()
+        {
+            $data = array('func' => 'fileman', 'data' => '<<<>>>');
+            $s = "<div class='body'>
         {% for elem in data %}
         {% if elem.type='text' %}
         {% elseif elem.type=='foto' %}
@@ -925,14 +924,13 @@ class tpl_xxx extends tpl_yyy
             {% endif %}
             {% endfor %}
         </div> ";
-                $pattern = '<div class=\'body\'>
+            $pattern = '<div class=\'body\'>
         </div> ';
-                //$this->expectException(\Ksnk\templater\CompilationException::class);
-                $this->assertEquals($pattern,
-                $this->_test_cmpl($s, $data)
-                );
-            }
-        */
+            $this->expectException(CompilationException::class);
+            //$this->assertEquals($pattern,
+            $this->_test_cmpl($s, $data);
+            //);
+        }
     }
 }
 

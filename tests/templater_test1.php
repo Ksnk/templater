@@ -66,12 +66,4 @@ class Test_Templater extends TestCase {
             ,$compiler1
         );
     }
-    /**
-     * тестируем оттранслированный шаблон
-     *
-    function test_tpl_one(){
-        $compiler=$this->compile_it('test');
-    }*/
 }
-
-?>

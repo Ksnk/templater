@@ -777,6 +777,9 @@ class tpl_parser
                 $this->getNext(); // выдали таг
                 break;
             }
+            if ($this->op->val != 'elseif' && $this->op->val != 'elif'){
+                $this->error('Ожидалось endif') ;
+            }
         } while (true);
         // $this->getNext(); // съели символ, закрывающий тег
         $this->pushOp($this->oper($this->template('if', $tag), self::TYPE_SENTENSE));
