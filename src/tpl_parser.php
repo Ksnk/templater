@@ -49,8 +49,7 @@ class tpl_parser
     // дополнительные константы типов
     const
         TYPE_SENTENSE = 101,
-        TYPE_LITERAL = 102
-;
+        TYPE_LITERAL = 102;
     protected
 
         $locals = array(), // стек идентификаторов с областью видимости
@@ -157,7 +156,7 @@ class tpl_parser
     );
 
     public
-        $currentFunction= '', // имя текущей функции block или macro
+        $currentFunction = '', // имя текущей функции block или macro
         //для корректной работы parent()
         $opensentence = array(), // комплект открытых тегов, для портирования
         /** @var string - скрипт для выполнения */
@@ -178,21 +177,22 @@ class tpl_parser
          */
         $op = null,
 
-        $namespace='',
-        $basenamespace='',
+        $namespace = '',
+        $basenamespace = '',
         /**
          * @var scaner
          */
         $scaner = null;
 
-    function reset(){
+    function reset()
+    {
         $this->locals = array(); // стек идентификаторов с областью видимости
         $this->ids_low = 0; // нижняя граница области видимости
         $this->curlex = 0;
-        $this->opensentence=[];
-        $this->operand=[];
-        $this->op=[];
-        $this->lex=[];
+        $this->opensentence = [];
+        $this->operand = [];
+        $this->op = [];
+        $this->lex = [];
     }
 
     function __construct()
@@ -259,13 +259,13 @@ class tpl_parser
                         );
                     }
                 }
-                if($op1->type==self::TYPE_SLICE){
+                if ($op1->type == self::TYPE_SLICE) {
                     // вызов объектного макроса
-                    $this->to('I',$op1->list[0]);
+                    $this->to('I', $op1->list[0]);
                     //$op1->val =$op1->list[0]->val;
-                    $op1->val = $this->template('callmacroex', array('par1' => $op1->list[0]->val,'mm'=>$op1->list[1]->val, 'param' => $arr));
-                    $op1->type = self::TYPE_OPERAND ;
-                }  else {
+                    $op1->val = $this->template('callmacroex', array('par1' => $op1->list[0]->val, 'mm' => $op1->list[1]->val, 'param' => $arr));
+                    $op1->type = self::TYPE_OPERAND;
+                } else {
                     $op1->val = $this->template('callmacro', array('name' => $op1, 'param' => $arr, 'parkeys' => $arrkeys));
                     $op1->type = self::TYPE_SENTENSE;
                 }
@@ -428,7 +428,7 @@ class tpl_parser
     function makelex($script)
     {
         $this->scaner = new scaner();
-        if (strlen($script) < 60 && is_readable($script)){
+        if (strlen($script) < 200 && is_readable($script)){
             $this->scaner->newhandle($script);
         } else {
             $this->scaner->newbuf($script);
@@ -710,7 +710,7 @@ class tpl_parser
         $this->getExpression(); // получили имя идентификатора
         $tag['name'] = $this->popOp()->val;
         $this->currentFunction = $tag['name'];
-        $this->opensentence[] = & $tag;
+        $this->opensentence[] = &$tag;
         $this->getNext();
         $this->block_internal(array('endblock'), $tag);
         $this->getNext();
@@ -831,10 +831,10 @@ class tpl_parser
     function tplcalc($class = 'compiler', $tpl_class = 'compiler')
     {
         $tag = array('tag' => 'class', 'import' => array(), 'macro' => array(), 'name' => $class, 'data' => array());
-        if($this->namespace){
-            $tag['namespace']=$this->namespace;
-            if($this->basenamespace){
-                $tag['basenamespace']=$this->basenamespace;
+        if ($this->namespace) {
+            $tag['namespace'] = $this->namespace;
+            if ($this->basenamespace) {
+                $tag['basenamespace'] = $this->basenamespace;
             }
         }
 

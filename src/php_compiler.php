@@ -11,7 +11,7 @@
 
 namespace Ksnk\templater;
 
-use Ksnk\templates\base as tpl_base;
+use Ksnk\templater\base as tpl_base;
 
 class php_compiler extends tpl_parser
 {

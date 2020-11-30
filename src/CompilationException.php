@@ -2,11 +2,11 @@
 /**
  * Jinja language parcer
  * <%=point('hat','jscomment');
- *
- *
- *
- *
- * %>
+
+
+
+
+ %>
  */
 
 namespace Ksnk\templater;
