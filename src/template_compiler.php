@@ -2,14 +2,14 @@
 /**
  * helper class to check template modification time
  * <%=point('hat','jscomment');
-// эти пустые строки оставлены для того, чтобы номера строк совпадали
+  // эти пустые строки оставлены для того, чтобы номера строк совпадали
 
 
 
-%>
+  %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
 
 use \Ksnk\templater\php_compiler;
 
@@ -54,14 +54,14 @@ class template_compiler
         $result = '';
         try {
             $calc->makelex($tpl);
-            $ns=self::options('namespace');
-            if(!empty($ns))
-                $calc->namespace=$ns;
-            $bns=self::options('basenamespace');
-            if(!empty($bns))
-                $calc->basenamespace=$bns;
+            $ns = self::options('namespace');
+            if (!empty($ns))
+                $calc->namespace = $ns;
+            $bns = self::options('basenamespace');
+            if (!empty($bns))
+                $calc->basenamespace = $bns;
             else
-                $calc->basenamespace=__NAMESPACE__;
+                $calc->basenamespace = __NAMESPACE__;
             $result = $calc->tplcalc($name, $tpl_class);
         } catch (CompilationException $e) {
             echo $e->getMessage();
@@ -90,7 +90,7 @@ class template_compiler
         $xtime = filemtime(__FILE__);
         $base = realpath(self::options('TEMPLATE_PATH'));
         $basens = self::options('rootnamespace');
-        if(empty($basens)) $basens = self::options('namespace');
+        if (empty($basens)) $basens = self::options('namespace');
 
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($base), \RecursiveIteratorIterator::CHILD_FIRST

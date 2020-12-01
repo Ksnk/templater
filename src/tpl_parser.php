@@ -6,10 +6,10 @@
 
 
 
-%>
+  %>
  */
 
-namespace Ksnk\templater ;
+namespace Ksnk\templater;
 
 use Ksnk\scaner\scaner;
 use Ksnk\templater\base as tpl_base;
@@ -151,8 +151,7 @@ class tpl_parser
         /**
          * массив опций для изменения на лету
          */
-    , $options = array(
-        // Enviroment setting
+    , $options = array(// Enviroment setting
     );
 
     public
@@ -219,8 +218,8 @@ class tpl_parser
 
     /**
      * Вызов функции op1 с параметрами op2
-     * @param  operand $op1
-     * @param  operand $op2
+     * @param operand $op1
+     * @param operand $op2
      * @return operand
      * @throws CompilationException
      */
@@ -292,7 +291,7 @@ class tpl_parser
                 $this->back();
                 break;
             }
-            if (!empty($tag_waitingfor) && $this->op->type!=self::TYPE_STRING2 && in_array($this->op->val, $tag_waitingfor)) {
+            if (!empty($tag_waitingfor) && $this->op->type != self::TYPE_STRING2 && in_array($this->op->val, $tag_waitingfor)) {
                 $this->back();
                 break;
             }
@@ -315,7 +314,7 @@ class tpl_parser
                 /* if ($this->op->val != '') {
                    $this->error('unexpected construction2');
                } */
-                if(!($op = $this->popOp())) break;
+                if (!($op = $this->popOp())) break;
                 $op = $this->to('S', $op);
                 if ($op->type == self::TYPE_SENTENSE)
                     $data[] = array('data' => $op->val);
@@ -428,7 +427,7 @@ class tpl_parser
     function makelex($script)
     {
         $this->scaner = new scaner();
-        if (strlen($script) < 200 && is_readable($script)){
+        if (strlen($script) < 200 && is_readable($script)) {
             $this->scaner->newhandle($script);
         } else {
             $this->scaner->newbuf($script);
@@ -438,7 +437,7 @@ class tpl_parser
         /**
          * на прошлом закрывающем теге был -
          */
-        $triml=false;
+        $triml = false;
         /**
          * массив индексов всех лексем, с начала bstart и до следующего.
          */
@@ -457,7 +456,7 @@ class tpl_parser
             'trim' => preg_quote('-'),
         ], '~:start_1::trim:?~sm',
             function ($line) use ($reg, $types, &$marklex, &$triml) {
-               // print_r($line);
+                // print_r($line);
                 if (!empty($marklex) && preg_match('/\r?\n/s', $line['_skiped'])) {
                     // удаляем символ перевода строки из текущего скипа
                     $line['_skiped'] = preg_replace('/^[ \t]*\r?\n/', '', $line['_skiped']);
@@ -465,41 +464,41 @@ class tpl_parser
                     foreach ($marklex as $lid) {
                         if (isset($this->lex[$lid])) {
                             $this->lex[$lid]->val = preg_replace('/[ \t]*$/', '', $this->lex[$lid]->val);
-                }
+                        }
                     }
                     $marklex = [];
                 }
-                if($triml && !empty($line['_skiped'])) {
+                if ($triml && !empty($line['_skiped'])) {
                     $line['_skiped'] = preg_replace('/^\s*/s', '', $line['_skiped']);
-                    if($line['_skiped']!='') $triml=false;
+                    if ($line['_skiped'] != '') $triml = false;
                 }
                 if (!empty($line['trim'])) {
                     $line['_skiped'] = preg_replace('/(\s*\r?\n?|^)\s*$/', '', $line['_skiped']);
                     $line['trim'] = false;
                 }
 
-                if(!empty($line['_skiped'])) {
-                    $pos=$this->scaner->getpos();
+                if (!empty($line['_skiped'])) {
+                    $pos = $this->scaner->getpos();
                     $this->lex[] = $this->oper('_echo_', self::TYPE_OPERATION, $pos);
                     if (!empty($line['bstart'])) {
                         $marklex[] = count($this->lex);
                     }
                     $this->lex[] = $this->oper($line['_skiped'], self::TYPE_STRING, $pos);
                     $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
-                    $line['_skiped']='';
+                    $line['_skiped'] = '';
                 }
-                if(!empty($line['cline'])) {
+                if (!empty($line['cline'])) {
                     $this->scaner->scan('~(.*?)\r?\n~i');
                     return;
-                } else if(!empty($line['cstart'])) {
-                    $this->scaner->scan('~'.preg_quote($this->options['COMMENT_END'].'~sm'));
+                } else if (!empty($line['cstart'])) {
+                    $this->scaner->scan('~' . preg_quote($this->options['COMMENT_END'] . '~sm'));
                     return;
                 }
 
                 $triml = false;
 
 // отрезаем следующую лексему шаблонизатора
-                if(!empty($line['xstart']) || !empty($line['bstart'])) {
+                if (!empty($line['xstart']) || !empty($line['bstart'])) {
                     if (!empty($line['bstart'])) {
                         $marklex[] = -1;
                     } else {
@@ -507,7 +506,7 @@ class tpl_parser
                     }
                     $first = true;
                     while ($m = $this->scaner->regit($reg)) {
-                        $pos = $this->scaner->filestart+$m[0][1];
+                        $pos = $this->scaner->filestart + $m[0][1];
                         if (!empty($m[1][0])) {
                             $op = $this->oper(stripslashes($m[2][0]), self::TYPE_STRING, $pos);
                             if ($m[1][0] == "'")
@@ -521,7 +520,7 @@ class tpl_parser
                                 if (isset($m[$x]) && $m[$x][0] != "") {
                                     if ($types[$x] == self::TYPE_COMMA && strlen($m[$x][0]) > 1) {
                                         if ($m[$x][0]{0} == '-') {
-                                            $triml=true;
+                                            $triml = true;
                                             $m[$x] = substr($m[$x][0], 1);
                                         }
                                         $this->lex[] = $this->oper('', self::TYPE_COMMA, $pos);
@@ -533,7 +532,7 @@ class tpl_parser
 
                                     // разбираемся с тегом RAW
                                     if ($first && $m[$x][0] == 'raw') {
-                                        if(!$x=$this->scaner->regit('~.*?'
+                                        if (!$x = $this->scaner->regit('~.*?'
                                             . preg_quote($this->options['BLOCK_END'], '#~')
                                             . '(.*?)'
                                             . preg_quote($this->options['BLOCK_START'], '#~')
@@ -608,7 +607,7 @@ class tpl_parser
             // вызов.
             return call_user_func($op1->handler, $op1, $op2, 'attr');
         }
-        return $this->function_scratch($op1,$op2);
+        return $this->function_scratch($op1, $op2);
     }
 
     /**
@@ -654,7 +653,7 @@ class tpl_parser
         $this->getNext(); // name of macros
         // зарегистрировать как функцию
         $tag['name'] = $this->to(self::TYPE_LITERAL, $this->op)->val;
-        $this->currentFunction=$tag['name'];
+        $this->currentFunction = $tag['name'];
         $this->getNext(); // name of macros
         if ($this->op->val != '(') {
             $this->error('expected macro parameters');
@@ -777,8 +776,8 @@ class tpl_parser
                 $this->getNext(); // выдали таг
                 break;
             }
-            if ($this->op->val != 'elseif' && $this->op->val != 'elif'){
-                $this->error('Ожидалось endif') ;
+            if ($this->op->val != 'elseif' && $this->op->val != 'elif') {
+                $this->error('Ожидалось endif');
             }
         } while (true);
         // $this->getNext(); // съели символ, закрывающий тег
@@ -792,7 +791,7 @@ class tpl_parser
         $this->getExpression(); // получили имя файла для импорта
         $op = $this->popOp();
         $t =& $this->opensent('class');
-        $t['import'][] = basename($op->val, '.'.template_compiler::options('TEMPLATE_EXTENSION','jtpl'));
+        $t['import'][] = basename($op->val, '.' . template_compiler::options('TEMPLATE_EXTENSION', 'jtpl'));
         //   $this->getNext();
         return false;
     }
@@ -872,15 +871,15 @@ class tpl_parser
     {
         static $tpl_compiler;
         if (!empty($tpl_class) || empty($tpl_compiler)) {
-            if($this->basenamespace)
-                $tpl_compiler = '\\' .$this->basenamespace. '\\'.base::pps($tpl_class, 'compiler');
-            elseif($this->namespace)
-                $tpl_compiler = '\\' .$this->namespace. '\\'.base::pps($tpl_class, 'compiler');
+            if ($this->basenamespace)
+                $tpl_compiler = '\\' . $this->basenamespace . '\\' . base::pps($tpl_class, 'compiler');
+            elseif ($this->namespace)
+                $tpl_compiler = '\\' . $this->namespace . '\\' . base::pps($tpl_class, 'compiler');
             else
                 $tpl_compiler = 'tpl_' . tpl_base::pps($tpl_class, 'compiler');
             if (!class_exists($tpl_compiler)) {
                 // попытка включить файл
-                include_once (template_compiler::options('templates_dir') . $tpl_compiler . '.php');
+                include_once(template_compiler::options('templates_dir') . $tpl_compiler . '.php');
             }
             $tpl_compiler = new $tpl_compiler();
         }
@@ -910,7 +909,7 @@ class tpl_parser
         if (class_exists($name, false)) {
             $tag = new $name();
             $tag->execute($this);
-        } elseif (class_exists($cl=__NAMESPACE__.'\\'.$name, true)) {
+        } elseif (class_exists($cl = __NAMESPACE__ . '\\' . $name, true)) {
             $tag = new $cl();
             $tag->execute($this);
         } else if (method_exists($this, $name)) {
@@ -959,16 +958,16 @@ class tpl_parser
                $this->to('L', $op2);
                $op1->val .= '[' . $op2->val . ']';
                $op1->type = self::TYPE_XID; */
-        if($op1->type==self::TYPE_SLICE) {
+        if ($op1->type == self::TYPE_SLICE) {
             $op1->list[] = $op2;
             return $op1;
         }
-        if($op2->type==self::TYPE_SLICE) {
-            array_unshift($op2->list,$op1);
+        if ($op2->type == self::TYPE_SLICE) {
+            array_unshift($op2->list, $op1);
             return $op2;
         }
-        $op= new operand('',self::TYPE_SLICE);
-        $op->list=array($op1,$op2);
+        $op = new operand('', self::TYPE_SLICE);
+        $op->list = array($op1, $op2);
         return $op;
     }
 
@@ -1068,7 +1067,7 @@ class tpl_parser
         }
         if ($prio < 10 || !isset($this->prio[$op])) $this->prio[$op] = $prio;
         if (is_string($phpeq)) {
-            $array[$op] = $this->oper(str_replace('~~~', str_replace('%','%%',$op), $phpeq));
+            $array[$op] = $this->oper(str_replace('~~~', str_replace('%', '%%', $op), $phpeq));
         } else {
             $array[$op] = $this->oper($phpeq);
         }
@@ -1239,11 +1238,11 @@ class tpl_parser
                             if ($this->op->val != ')')
                                 $this->error('closed brackets missed'); // гарантированно - ОПЕРАНД
                             $this->execute($op);
-                       /* } elseif(isset($this->binop[$op->val]))  { // бинарная операция
-                           // $this->back();
-                            $this->pushOp($op);
-                            $place = 2;
-                            break;*/
+                            /* } elseif(isset($this->binop[$op->val]))  { // бинарная операция
+                                // $this->back();
+                                 $this->pushOp($op);
+                                 $place = 2;
+                                 break;*/
                         } else { // унарная операция
                             $this->back();
                             $this->calc($op, true);
@@ -1539,7 +1538,7 @@ class tpl_parser
                 break;
             }
         }
-         if ($op->val != ')') {
+        if ($op->val != ')') {
             $op->prio = $prio;
             $op->unop = $unop;
             array_push($this->operation, $op);

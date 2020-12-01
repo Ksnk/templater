@@ -7,6 +7,7 @@
  * Фильтры обязаны иметь первым параметром данные для фильтрации
  *
  */
+
 namespace Ksnk\templater;
 
 use \ENGINE;
@@ -27,16 +28,18 @@ class base
 
     function __construct()
     {
-        $this->macro=array();
+        $this->macro = array();
     }
 
-    function sc_callback($m){
-        return ENGINE::exec(array('Main','shortcode'), array($m[1]));
+    function sc_callback($m)
+    {
+        return ENGINE::exec(array('Main', 'shortcode'), array($m[1]));
     }
 
-    function shortcode($s){
-        if(false!==strpos($s,'[[')){
-            return preg_replace_callback('/\[\[(.*?)\]\]/',array($this,'sc_callback'),
+    function shortcode($s)
+    {
+        if (false !== strpos($s, '[[')) {
+            return preg_replace_callback('/\[\[(.*?)\]\]/', array($this, 'sc_callback'),
                 $s);
         } else {
             return $s;
@@ -77,7 +80,7 @@ class base
      */
     function _int($s)
     {
-        if(empty($s)) return 0; else return 0+$s;
+        if (empty($s)) return 0; else return 0 + $s;
     }
 
     /**
@@ -117,13 +120,15 @@ class base
 
     }
 
-    function func_json_encode($s){
-        return utf8_encode(json_encode($s,JSON_FORCE_OBJECT));
+    function func_json_encode($s)
+    {
+        return utf8_encode(json_encode($s, JSON_FORCE_OBJECT));
     }
 
-    function func_repeat($s,$num){
-        if(!is_numeric($num) || $num<=0) return '';
-        return str_repeat($s,$num);
+    function func_repeat($s, $num)
+    {
+        if (!is_numeric($num) || $num <= 0) return '';
+        return str_repeat($s, $num);
     }
 
     /**
@@ -133,10 +138,10 @@ class base
      * @param $n
      * @param string $search
      * @param string $replace
-     * @internal param string $suf
      * @return array
+     * @internal param string $suf
      */
-    function func_replace($n, $search='',$replace='')
+    function func_replace($n, $search = '', $replace = '')
     {
         if ($search && $search{0} == '/')
             return preg_replace($search, $replace, $n);
@@ -208,72 +213,72 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * @param string $format
      * @return mixed
      */
-    static function toRusDate($daystr=null,$format="j F, Y г."){
-        if ($daystr){
-            if(!is_numeric($daystr))
-                $daystr=strtotime($daystr);
-        }
-        else $daystr=time();
-        $replace=array(
-            'january'=>'января',
-            'february'=>'февраля',
-            'march'=>'марта',
-            'april'=>'апреля',
-            'may'=>'мая',
-            'june'=>'июня',
-            'july'=>'июля',
-            'august'=>'августа',
-            'september'=>'сентября',
-            'october'=>'октября',
-            'november'=>'ноября',
-            'december'=>'декабря',
+    static function toRusDate($daystr = null, $format = "j F, Y г.")
+    {
+        if ($daystr) {
+            if (!is_numeric($daystr))
+                $daystr = strtotime($daystr);
+        } else $daystr = time();
+        $replace = array(
+            'january' => 'января',
+            'february' => 'февраля',
+            'march' => 'марта',
+            'april' => 'апреля',
+            'may' => 'мая',
+            'june' => 'июня',
+            'july' => 'июля',
+            'august' => 'августа',
+            'september' => 'сентября',
+            'october' => 'октября',
+            'november' => 'ноября',
+            'december' => 'декабря',
 
-            'jan'=>'янв',
-            'feb'=>'фев',
-            'mar'=>'мар',
-            'apr'=>'апр',
+            'jan' => 'янв',
+            'feb' => 'фев',
+            'mar' => 'мар',
+            'apr' => 'апр',
 //        'may'=>'мая',
-            'jun'=>'июн',
-            'jul'=>'июл',
-            'aug'=>'авг',
-            'sep'=>'сен',
-            'oct'=>'окт',
-            'nov'=>'ноя',
-            'dec'=>'дек',
+            'jun' => 'июн',
+            'jul' => 'июл',
+            'aug' => 'авг',
+            'sep' => 'сен',
+            'oct' => 'окт',
+            'nov' => 'ноя',
+            'dec' => 'дек',
 
-            'monday'=>'понедельник',
-            'tuesday'=>'вторник',
-            'wednesday'=>'среда',
-            'thursday'=>'четверг',
-            'friday'=>'пятница',
-            'saturday'=>'суббота',
-            'sunday'=>'воскресенье',
+            'monday' => 'понедельник',
+            'tuesday' => 'вторник',
+            'wednesday' => 'среда',
+            'thursday' => 'четверг',
+            'friday' => 'пятница',
+            'saturday' => 'суббота',
+            'sunday' => 'воскресенье',
 
-            'mon'=>'пнд',
-            'teu'=>'втр',
-            'wed'=>'срд',
-            'thu'=>'чтв',
-            'fri'=>'птн',
-            'sat'=>'сбт',
-            'sun'=>'вск',
+            'mon' => 'пнд',
+            'teu' => 'втр',
+            'wed' => 'срд',
+            'thu' => 'чтв',
+            'fri' => 'птн',
+            'sat' => 'сбт',
+            'sun' => 'вск',
         );
 
-        return	str_replace(array_keys($replace),array_values($replace),
+        return str_replace(array_keys($replace), array_values($replace),
             strtolower(date($format, $daystr)));
     }
 
     function func_date($s, $format = "d m Y")
     {
         static $offset;
-        if(!isset($offset)) {
+        if (!isset($offset)) {
             $timezone = 'Europe/Moscow';
             $userTimezone = new DateTimeZone(!empty($timezone) ? $timezone : 'GMT');
             $gmtTimezone = new DateTimeZone('GMT');
             $myDateTime = new DateTime((date("r")), $gmtTimezone);
             $offset = $userTimezone->getOffset($myDateTime);
         }
-        if (!is_numeric($s)) $s=strtotime($s);
-        return self::toRusDate( $s+$offset, $format);
+        if (!is_numeric($s)) $s = strtotime($s);
+        return self::toRusDate($s + $offset, $format);
     }
 
     function func_truncate($s, $length = 255, $killwords = False, $end = ' ...')
@@ -435,19 +440,22 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return null;
     }
 
-    public function func_fileurl($id){
-        if(empty($id)) return '';
-        $f=new modelFile();
-        $r=$f->get($id);
-        return trim($r['filename'],'~');
+    public function func_fileurl($id)
+    {
+        if (empty($id)) return '';
+        $f = new modelFile();
+        $r = $f->get($id);
+        return trim($r['filename'], '~');
     }
 
-    public function func_enginelink($p1='',$p2='',$p3=''){
-        return UTILS::url($p1,$p2,$p3);
+    public function func_enginelink($p1 = '', $p2 = '', $p3 = '')
+    {
+        return UTILS::url($p1, $p2, $p3);
     }
 
-    public function func_count($x){
-        if(is_countable ($x) ) return count($x);
+    public function func_count($x)
+    {
+        if (is_countable($x)) return count($x);
         return 0;
     }
 
@@ -495,25 +503,25 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      * @param mixed $fill_with
      * @return array
      */
-    function func_slice($value, $start,$len=-1, $fill_with = '')
+    function func_slice($value, $start, $len = -1, $fill_with = '')
     {
         if (!is_array($value)) {
-            $strlen=mb_strlen($value,'utf-8');
-            if($strlen<=$start) return '';
-            if($len<0) $len = $strlen-$start;
-            if($strlen<=$start+$len-1){
-                $len=$strlen-$start;
+            $strlen = mb_strlen($value, 'utf-8');
+            if ($strlen <= $start) return '';
+            if ($len < 0) $len = $strlen - $start;
+            if ($strlen <= $start + $len - 1) {
+                $len = $strlen - $start;
             }
             // string slice
-            return mb_substr($value,$start,$len,'utf-8');
+            return mb_substr($value, $start, $len, 'utf-8');
         };
-        $arrlen=count($value);
-        if($arrlen<=$start) return [];
-        if($len<0) $len = $arrlen-$start;
-        if($arrlen<=$start+$len-1){
-            $len=$arrlen-$start;
+        $arrlen = count($value);
+        if ($arrlen <= $start) return [];
+        if ($len < 0) $len = $arrlen - $start;
+        if ($arrlen <= $start + $len - 1) {
+            $len = $arrlen - $start;
         }
-        return array_slice($value,$start,$len);
+        return array_slice($value, $start, $len);
     }
 
     /**
@@ -561,8 +569,9 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
     }
 
 
-    function func_setarray(&$a,$b,$val){
-        $a[$b]=preg_replace('/~/',$val,isset($a[$b])?$a[$b]:'');
+    function func_setarray(&$a, $b, $val)
+    {
+        $a[$b] = preg_replace('/~/', $val, isset($a[$b]) ? $a[$b] : '');
         return '';
     }
 }
