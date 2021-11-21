@@ -1,12 +1,14 @@
 <?php
 /**
  * PHP templates creator.
- * <%=point('hat','jscomment');
-
-
-
-
-  %>
+ * ----------------------------------------------------------------------------
+ * $Id: Templater engine v 2.0 (C) by Ksnk (sergekoriakin@gmail.com).
+ *      based on Twig sintax,
+ * ver: v2.0, Last build: 2012012257
+ * GIT: origin	https://github.com/Ksnk/templater (push)$
+ * ----------------------------------------------------------------------------
+ * License MIT - Serge Koriakin - 2020
+ * ----------------------------------------------------------------------------
  */
 
 namespace Ksnk\templater;
@@ -69,6 +71,7 @@ class php_compiler extends tpl_parser
             ->newFunc('var_export', array($this, 'function_var_export'))
             ->newFunc('justifyleft', '$this->func_justifyL(%s)')
             ->newFunc('slice', '$this->func_slice(%s)')
+            ->newFunc('chunk', '$this->func_chunk(%s)')
             ->newFunc('range', '$this->func_range(%s)')
             ->newFunc('keys', '$this->func_keys(%s)')
             ->newFunc('callex', '$this->callex(%s)')
@@ -393,7 +396,7 @@ class php_compiler extends tpl_parser
 
     function utford($c)
     {
-        if (ord($c{0}) > 0xc0) {
+        if (ord($c[0]) > 0xc0) {
             $x = unpack('N', mb_convert_encoding($c, 'UCS-4BE', 'UTF-8'));
             return $x[1];
             /*           $x = 0;
@@ -403,7 +406,7 @@ class php_compiler extends tpl_parser
           }
           return $x; */
         } else
-            return ord($c{0});
+            return ord($c[0]);
     }
 
     function utfchr($i)

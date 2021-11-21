@@ -1,12 +1,14 @@
 <?php
 /**
  * Jinja language parcer
- * <%=point('hat','jscomment');
-
-
-
-
-  %>
+ * ----------------------------------------------------------------------------
+ * $Id: Templater engine v 2.0 (C) by Ksnk (sergekoriakin@gmail.com).
+ *      based on Twig sintax,
+ * ver: v2.0, Last build: 2012012257
+ * GIT: origin	https://github.com/Ksnk/templater (push)$
+ * ----------------------------------------------------------------------------
+ * License MIT - Serge Koriakin - 2020
+ * ----------------------------------------------------------------------------
  */
 
 namespace Ksnk\templater;
@@ -519,7 +521,7 @@ class tpl_parser
                             for ($x = count($types) - 1; $x > 2; $x--) {
                                 if (isset($m[$x]) && $m[$x][0] != "") {
                                     if ($types[$x] == self::TYPE_COMMA && strlen($m[$x][0]) > 1) {
-                                        if ($m[$x][0]{0} == '-') {
+                                        if ($m[$x][0][0] == '-') {
                                             $triml = true;
                                             $m[$x] = substr($m[$x][0], 1);
                                         }
@@ -1073,7 +1075,7 @@ class tpl_parser
         }
         $array[$op]->types = $types . '****';
         $op = preg_quote($op);
-        if ($op != '' && $op{0} != '_') {
+        if ($op != '' && $op[0] != '_') {
             if (!in_array($op, $this->cake[$ww]))
                 $this->cake[$ww][] = $op;
         }
@@ -1440,9 +1442,9 @@ class tpl_parser
                 $op2 = $this->popOp();
                 $opr = $this->binop[$last->val];
                 $this->pushOp(sprintf($this->binop[$last->val]->val
-                    , $this->to(array($opr->types{2}, 'value'), $op2)
-                    , $this->to(array($opr->types{1}, 'value'), $op1)
-                ), $this->t_conv[$opr->types{0}]);
+                    , $this->to(array($opr->types[2], 'value'), $op2)
+                    , $this->to(array($opr->types[1], 'value'), $op1)
+                ), $this->t_conv[$opr->types[0]]);
             } elseif (is_callable($this->binop[$last->val]->val)) {
                 $op2 = $this->popOp();
                 $op1 = $this->popOp();
@@ -1454,9 +1456,9 @@ class tpl_parser
             if (is_string($this->suffop[$last->val]->val)) {
                 $op1 = $this->popOp();
                 $opr = $this->suffop[$last->val];
-                $op1 = $this->to($opr->types{1}, $op1);
+                $op1 = $this->to($opr->types[1], $op1);
                 $this->pushOp(sprintf($this->suffop[$last->val]->val
-                    , $op1->val), $this->t_conv[$opr->types{0}]);
+                    , $op1->val), $this->t_conv[$opr->types[0]]);
             } else {
                 $op = call_user_func($this->suffop[$last->val]->val, $this->popOp());
                 if ($op)
@@ -1467,7 +1469,7 @@ class tpl_parser
                 $opr = $this->unop[$last->val];
                 $op = $this->popOp();
                 $this->pushOp(sprintf($this->unop[$last->val]->val
-                    , $this->to(array($opr->types{1}, 'value'), $op)), $opr->types{0});
+                    , $this->to(array($opr->types[1], 'value'), $op)), $opr->types[0]);
             } else {
                 $op = call_user_func($this->unop[$last->val]->val, $this->popOp());
                 if ($op)

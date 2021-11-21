@@ -1,12 +1,14 @@
 <?php
 /**
  * helper class to check template modification time
- * <%=point('hat','jscomment');
-  // эти пустые строки оставлены для того, чтобы номера строк совпадали
-
-
-
-  %>
+ * ----------------------------------------------------------------------------
+ * $Id: Templater engine v 2.0 (C) by Ksnk (sergekoriakin@gmail.com).
+ *      based on Twig sintax,
+ * ver: v2.0, Last build: 2012012257
+ * GIT: origin	https://github.com/Ksnk/templater (push)$
+ * ----------------------------------------------------------------------------
+ * License MIT - Serge Koriakin - 2020
+ * ----------------------------------------------------------------------------
  */
 
 namespace Ksnk\templater;
@@ -85,12 +87,16 @@ class template_compiler
         if (!empty($options))
             self::options($options);
 
+        $base = realpath(self::options('TEMPLATE_PATH'));
+        if(empty($base))
+            return;
+
         $ext = self::options('TEMPLATE_EXTENSION', null, 'jtpl');
 
         $xtime = filemtime(__FILE__);
-        $base = realpath(self::options('TEMPLATE_PATH'));
         $basens = self::options('rootnamespace');
-        if (empty($basens)) $basens = self::options('namespace');
+        if (empty($basens))
+            $basens = self::options('namespace');
 
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($base), \RecursiveIteratorIterator::CHILD_FIRST
@@ -121,6 +127,10 @@ class template_compiler
                 php_compiler::$filename = $v;
                 $x = self::compile_tpl(file_get_contents($v), $name);
                 if (!!$x) {
+                    $dir=dirname($phpn);
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0775, true);
+                    }
                     if (false === ($size = file_put_contents($phpn, $x))) {
                         if ($force) echo $NLBR . "error writing file " . $phpn;
                     } else {
@@ -138,4 +148,3 @@ class template_compiler
     }
 
 }
-

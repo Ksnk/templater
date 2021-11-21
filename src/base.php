@@ -143,7 +143,7 @@ class base
      */
     function func_replace($n, $search = '', $replace = '')
     {
-        if ($search && $search{0} == '/')
+        if ($search && $search[0] == '/')
             return preg_replace($search, $replace, $n);
         else
             return str_replace($search, $replace, $n);
@@ -272,9 +272,9 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         static $offset;
         if (!isset($offset)) {
             $timezone = 'Europe/Moscow';
-            $userTimezone = new DateTimeZone(!empty($timezone) ? $timezone : 'GMT');
-            $gmtTimezone = new DateTimeZone('GMT');
-            $myDateTime = new DateTime((date("r")), $gmtTimezone);
+            $userTimezone = new \DateTimeZone(!empty($timezone) ? $timezone : 'GMT');
+            $gmtTimezone = new \DateTimeZone('GMT');
+            $myDateTime = new \DateTime((date("r")), $gmtTimezone);
             $offset = $userTimezone->getOffset($myDateTime);
         }
         if (!is_numeric($s)) $s = strtotime($s);
@@ -522,6 +522,21 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
             $len = $arrlen - $start;
         }
         return array_slice($value, $start, $len);
+    }
+
+    /**
+     * фильтр chunk - разбить массив на кусочки
+     * @param mixed $value
+     * @param int $len
+     * @return array
+     */
+    function func_chunk($value, $len = 1)
+    {
+        if (!is_array($value)) { // explode строки в массив. Зачем это надо ?
+            // string slice
+            return mb_str_split($value, $len, 'utf-8');
+        };
+        return array_chunk($value, $len);
     }
 
     /**
