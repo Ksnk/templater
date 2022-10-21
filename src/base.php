@@ -453,6 +453,11 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return UTILS::url($p1, $p2, $p3);
     }
 
+    public function func_enginebundle()
+    {
+        return UTILS::bundle(func_get_args());
+    }
+
     public function func_count($x)
     {
         if (is_countable($x)) return count($x);

@@ -82,6 +82,7 @@ class php_compiler extends tpl_parser
             ->newFunc('format', 'sprintf(%s)')
             ->newFunc('setarray', '$this->func_setarray(%s)')
             ->newFunc('link', '$this->func_enginelink(%s)')
+            ->newFunc('bundle', '$this->func_enginebundle(%s)')
             ->newFunc('fileurl', '$this->func_fileurl(%s)')
             ->newFunc('truncate', '$this->func_truncate(%s)')
             ->newFunc('tourl', '$this->func_2url(%s)')
