@@ -5,7 +5,7 @@
  * $Id: Templater engine v 2.0 (C) by Ksnk (sergekoriakin@gmail.com).
  *      based on Twig sintax,
  * ver: v2.0, Last build: 2012012257
- * GIT: origin	https://github.com/Ksnk/templater (push)$
+ * GIT: origin    https://github.com/Ksnk/templater (push)$
  * ----------------------------------------------------------------------------
  * License MIT - Serge Koriakin - 2020
  * ----------------------------------------------------------------------------
@@ -66,12 +66,6 @@ class tpl_parser
          */
     , $curlex = 0
 
-
-        /**
-         * скрипт для парсинга
-         */
-//		, $script='' // считается, что не нужен...
-
         /**
          * приоритеты операций
          */
@@ -120,7 +114,7 @@ class tpl_parser
         # wtf
     , 'wtf' => 'wtf'
         # операция на месте операнда
-    , 'undefined operation' => 'undefined operation'
+    , 'misplaced operation' => 'misplaced operation'
         # нет закрывающей скобки
     , 'closed brackets missed' => 'closed brackets missed'
         # синтаксическая ошибка - много операций и мало операндов
@@ -425,6 +419,7 @@ class tpl_parser
      * Здесь и только здесь определяется внешний вид оформления тегов шаблонизатора;
      * регулярные пляски тоже только здесь
      * @param $script
+     * @throws CompilationException
      */
     function makelex($script)
     {

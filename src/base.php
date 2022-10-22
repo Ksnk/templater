@@ -10,7 +10,8 @@
 
 namespace Ksnk\templater;
 
-use \ENGINE;
+use \Ksnk\text\tpl,
+    \ENGINE;
 use \UTILS;
 
 class base
@@ -47,8 +48,7 @@ class base
     }
 
     /**
-     * преобразовать строку в url
-     * -- чистим теги, символы . + / и \
+     * вывод отладочной информации
      * @param $s
      * @return string
      */
@@ -84,7 +84,7 @@ class base
     }
 
     /**
-     * прокерка по регулярке
+     * прокверка по регулярке
      * @param $s
      * @param $reg
      * @return string
@@ -102,22 +102,11 @@ class base
      * @param string $two - пользователя
      * @param string $five - пользователей
      * @return string
+     * @example {{number}} копе{{number|finnum('ка','йки','ек')}}
      */
     function func_finnumb($n, $one, $two, $five)
     {
-        if (is_array($n))
-            $n = count($n);
-        if ($n > 4 && $n < 21)
-            return $five;
-        $n = $n % 10;
-        if ($n == 0)
-            return $five;
-        if ($n < 2)
-            return $one;
-        if ($n < 5)
-            return $two;
-        return $five;
-
+        return tpl::pl($n, $one, $two, $five);
     }
 
     function func_json_encode($s)
@@ -132,9 +121,7 @@ class base
     }
 
     /**
-     * еще один вариант
-     * выдать один из вариантов, в зависимости от параметра
-     * {{ number }} огур{{ number | rusuf('ец|ца|цов')}}
+     * X|replace('a','b')
      * @param $n
      * @param string $search
      * @param string $replace
@@ -152,7 +139,7 @@ class base
     /**
      * еще один вариант
      * выдать один из вариантов, в зависимости от параметра
-     * {{ number }} огур{{ number | rusuf('ец|ца|цов')}}
+     * {{ number }} огур{{ number | russuf('ец|ца|цов')}}
      * @param $n
      * @param string $suf
      * @return array
@@ -160,11 +147,7 @@ class base
     function func_russuf($n, $suf = '')
     {
         list($one, $two, $five, $trash) = explode('|', $suf . '|||', 4);
-        if ($n < 20 && $n > 9) return $five;
-        $n = $n % 10;
-        if ($n == 1) return $one;
-        if ($n < 5 && $n > 1) return $two;
-        return $five;
+        return tpl::pl($n, $one, $two, $five);
     }
 
     var $loriem_ipsum = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada est nec magna scelerisque tincidunt. In ut tellus id augue consectetur luctus. Nullam quis lorem dignissim nibh vehicula interdum quis id nisl. Maecenas non nibh et neque pretium tempor. Vestibulum aliquet eros et ligula elementum nec placerat purus hendrerit. Donec dignissim erat at mauris ultrices sit amet tincidunt ipsum laoreet. Aenean et cursus nisl. Sed nunc ante, pellentesque eget molestie non, pellentesque quis tortor. Aenean faucibus sapien non tellus lobortis rutrum. In hac habitasse platea dictumst. Fusce eget enim augue, ac viverra nulla. Vestibulum pretium rhoncus enim, suscipit convallis eros vulputate ut. Vestibulum non facilisis dolor. Etiam pretium, erat a porta accumsan, ante eros pulvinar urna, sit amet iaculis quam risus convallis nisi.
@@ -207,66 +190,6 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
         return $result;
     }
 
-    /**
-     * стандарные конвертеры не умеют месяцы в родительном падеже. Как так ?
-     * @param null $daystr
-     * @param string $format
-     * @return mixed
-     */
-    static function toRusDate($daystr = null, $format = "j F, Y г.")
-    {
-        if ($daystr) {
-            if (!is_numeric($daystr))
-                $daystr = strtotime($daystr);
-        } else $daystr = time();
-        $replace = array(
-            'january' => 'января',
-            'february' => 'февраля',
-            'march' => 'марта',
-            'april' => 'апреля',
-            'may' => 'мая',
-            'june' => 'июня',
-            'july' => 'июля',
-            'august' => 'августа',
-            'september' => 'сентября',
-            'october' => 'октября',
-            'november' => 'ноября',
-            'december' => 'декабря',
-
-            'jan' => 'янв',
-            'feb' => 'фев',
-            'mar' => 'мар',
-            'apr' => 'апр',
-//        'may'=>'мая',
-            'jun' => 'июн',
-            'jul' => 'июл',
-            'aug' => 'авг',
-            'sep' => 'сен',
-            'oct' => 'окт',
-            'nov' => 'ноя',
-            'dec' => 'дек',
-
-            'monday' => 'понедельник',
-            'tuesday' => 'вторник',
-            'wednesday' => 'среда',
-            'thursday' => 'четверг',
-            'friday' => 'пятница',
-            'saturday' => 'суббота',
-            'sunday' => 'воскресенье',
-
-            'mon' => 'пнд',
-            'teu' => 'втр',
-            'wed' => 'срд',
-            'thu' => 'чтв',
-            'fri' => 'птн',
-            'sat' => 'сбт',
-            'sun' => 'вск',
-        );
-
-        return str_replace(array_keys($replace), array_values($replace),
-            strtolower(date($format, $daystr)));
-    }
-
     function func_date($s, $format = "d m Y")
     {
         static $offset;
@@ -278,7 +201,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
             $offset = $userTimezone->getOffset($myDateTime);
         }
         if (!is_numeric($s)) $s = strtotime($s);
-        return self::toRusDate($s + $offset, $format);
+        return tpl::rusd($s + $offset, $format);
     }
 
     function func_truncate($s, $length = 255, $killwords = False, $end = ' ...')
@@ -378,7 +301,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
             return ENGINE::exec($callable, $p3);
         } else if (is_object($p1)) {
             $x = array();
-            if ($p1 instanceof tpl_Base) {
+            if ($p1 instanceof self) {
                 $p2 = '_' . $p2;
                 if (empty($p3)) $p3 = $x;
                 else if (!is_array($p3)) {
@@ -466,7 +389,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * фильтр join
-     * @param array $pieces
+     * @param array|string $pieces
      * @param string $glue
      * @return string
      */
@@ -497,16 +420,16 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
      */
     function func_is_array($p)
     {
-        return (is_array($p) || $p instanceof Traversable);
+        return (is_array($p) || $p instanceof \Traversable);
     }
 
     /**
      * фильтр slice - вывод значения по умолчанию, при пустом параметре
-     * @param mixed $value
+     * @param string|array $value
      * @param int $start
      * @param int $len
      * @param mixed $fill_with
-     * @return array
+     * @return array|string
      */
     function func_slice($value, $start, $len = -1, $fill_with = '')
     {
@@ -557,7 +480,7 @@ Pellentesque dictum scelerisque urna, sed porta odio venenatis ut. Integer aucto
 
     /**
      * Хелпер для циклов.
-     * @param unknown_type $loop_array
+     * @param array $loop_array
      * @return mixed|string
      */
     function loopcycle(&$loop_array)

@@ -25,33 +25,38 @@ if (!class_exists('engine')) {
 
 class twig_testTest extends TestCase
 {
-    function _test_tpl($data, $show = false)
+    function _test_tpl($data, $show = false, $exception='')
     {
         static $classnumber = 340000;
         $classnumber++;
         $calc = new \Ksnk\templater\php_compiler();
+        $calc->namespace = 'Ksnk\templates';
+        $calc->basenamespace = 'Ksnk\templater';
         $calc->makelex($data['index']);
-
+        if(!empty($exception)) {
+            $this->expectExceptionMessage($exception);
+        }
         $result = $calc->tplcalc('test' . $classnumber);
 
         if ($show) echo $result . "\n\n";
         //error_log($result."\n\n",3,'log.log');
         eval ('?>' . $result);
-        $t = 'tpl_test' . $classnumber;
+        $t = '\\'.$calc->namespace.'\test' . $classnumber;
         $t = new $t();
         $d=array(); if(isset($data['data'])) $d=$data['data'];
         if(isset($data['startpattern'])){
             $x=$t->_($d);
-            $this->assertEquals( substr($x,0,strlen($data['startpattern'])), $data['startpattern']);
+            $this->assertEquals( $data['startpattern'],substr($x,0,strlen($data['startpattern'])) );
         } else {
-            $this->assertEquals( $t->_($d), $data['pattern']);
+            $this->assertEquals( $data['pattern'],$t->_($d));
         }
+
     }
 
     function test2ndslice(){
         $this->_test_tpl(array(
             'index'=>'!{{data[0].index}} +{{data[0]["index"]}}',
-            'data' => array('data'=>array(array('index'=>'xxx'))),
+            'data' => ['data'=>[['index'=>'xxx']]],
             'pattern' => '!xxx +xxx'));
     }
 
@@ -123,12 +128,12 @@ class twig_testTest extends TestCase
     function testVariables()
     {
         $this->_test_tpl(array(
-            'index' => '{% set foo = "foo" %} {{ foo }}
+            'index' => '{% set foo = "foo" %} {{ foo -}}
 {% set foo = [1, 2] %} {% for index in foo %} {{index}}{% endfor %}
 {% set foo = {"foo": "bar","foo1": "bar1"} %}  {% for index,value in foo %} {{index}}:{{value}}
-{% endfor %}',
+{%- endfor -%}',
             'data' => array(),
-            'pattern' => ' foo 1 2 foo:bar foo1:bar1'));
+            'pattern' => ' foo  1 2   foo:bar foo1:bar1'));
     }
 
     function testMacro(){
@@ -144,17 +149,16 @@ class twig_testTest extends TestCase
     </ul>
     {% endif -%}
 </li>
-{% endmacro -%}
+{%- endmacro -%}
 
 {{ul_li(name,ulli)}}',
             'data' => array('name'=>'xxx','ulli'=>array('url'=>'xxx')),
             'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
     }
 
-    /*
-     *
+
 function testMacroError(){  // после первого endif пропущено %
-        $this->_test_tpl(array(
+        $this->_test_tpl([
                 'index'=>'{% macro ul_li(name,item) -%}
 
 <li{% if item.active %} class="active"{% endif }><span class="_states treepoint"></span> <a href="{{item.url}}">{{name}}</a>
@@ -168,10 +172,12 @@ function testMacroError(){  // после первого endif пропущен�
 
 {{ul_li(name,ulli)}}',
             'data' => array('name'=>'xxx','ulli'=>array('url'=>'xxx')),
-            'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'));
+            'pattern' => '<li><span class="_states treepoint"></span> <a href="xxx">xxx</a></li>'
+        ],
+            false,
+            'there is no endmacro tag');
     }
-     */
-    /* TODO: сообщение об ошибке, хочиццо
+/*
    public function testTwigExceptionAddsFileAndLineWhenMissing()
    {
        $loader = new Twig_Loader_Array(array('index' => "\n\n{{ foo.bar }}"));
@@ -198,6 +204,32 @@ function testMacroError(){  // после первого endif пропущен�
      'startpattern' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi malesuada '));
 
  }
+
+    function testTextUtility(){
+        $this->_test_tpl(array(
+                'data' => array('number' => '25345', 'data' => '<<<>>>'),
+                'index' => "{{number}} копе{{number|finnumb('ка','йки','ек')}}",
+                'pattern' => '25345 копеек')
+        );
+
+    }
+    function testTextUtility1(){
+        $this->_test_tpl(array(
+                'data' => array('number' => '2534', 'data' => '<<<>>>'),
+                'index' => "{{ number }} огур{{ number | russuf('ец|ца|цов')}}",
+                'pattern' => '2534 огурца')
+        );
+
+    }
+
+    function testTextUtility3(){
+        $this->_test_tpl(array(
+                'data' => array('date' => '1/12/2020'),
+                'index' => "{{ date|date('j F, Y г.')}} ",
+                'pattern' => '12 января, 2020 г. ')
+        );
+
+    }
 
 }
 
