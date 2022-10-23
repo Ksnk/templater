@@ -12,14 +12,9 @@
       "homepage": "https://github.com/ksnk"
     }
   ],
-  "repositories": [
-    {
-      "type":"git",
-      "url": "git@github.com:Ksnk/text.git"
-    }
-  ],
   "require": {
     "php": ">=5.6",
+    "ksnk/scaner": "*",
     "ksnk/text": "*"
   },
   "require-dev": {
@@ -28,7 +23,6 @@
   "autoload": {
     "psr-4": {
       "Ksnk\\templater\\": "src/",
-      "Ksnk\\scaner\\": "scaner/",
       "Ksnk\\templates\\": "templates/"
     }
   },
